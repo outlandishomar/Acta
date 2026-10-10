@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="28dp"
+    android:viewportWidth="22"
+    android:viewportHeight="28">
+    <!-- Vertical line centered at X=11, full height -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10.5,0h1v28h-1z" />
+</vector>
