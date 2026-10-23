@@ -87,10 +87,19 @@ Your productivity data belongs to you—not a remote server.
 
 ## 🤝 Support & Contribute
 
-Acta is free and open-source. If you enjoy using the app and want to support its development without spending a dime, here is how you can help:
+Acta is completely free and open-source. If you find the app valuable and want to support its maintenance and new features:
 
-* ⭐ **Star this repository** on GitHub to help others discover Acta.
-* 🌟 **Leave a 5-star review** on [Google Play](https://play.google.com/store/apps/details?id=com.outlandishomar.acta) — it makes a massive difference!
+<div align="center">
+  <a href="https://ko-fi.com/outlandishomar">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi" height="40" />
+  </a>
+</div>
+
+<br />
+
+You can also support the project for free:
+* ⭐ **Star this repository** on GitHub to help more people discover Acta.
+* 🌟 **Leave a 5-star review** on [Google Play](https://play.google.com/store/apps/details?id=com.outlandishomar.acta) — it helps tremendously with store visibility.
 * 🐛 **Report bugs or suggest features** by opening an [Issue](../../issues).
 * 💻 **Contribute code** via [Pull Requests](../../pulls).
 
