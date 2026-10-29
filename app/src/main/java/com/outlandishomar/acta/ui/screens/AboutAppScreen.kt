@@ -161,6 +161,22 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                     .padding(bottom = 24.dp, top = 8.dp)
             ) {
                 Icon(
+                    painter = painterResource(id = R.drawable.ic_github),
+                    contentDescription = "GitHub Repository",
+                    tint = TextPrimary,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/outlandishomar/Acta"))
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                        }
+                )
+
+                Spacer(modifier = Modifier.height(35.dp))
+
+                Icon(
                     painter = painterResource(id = noveltyRes),
                     contentDescription = "Novelty Designs",
                     tint = Color.Unspecified,
@@ -172,13 +188,13 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                         }
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Box(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "v1.0",
+                        text = "v2.1",
                         fontSize = 12.sp,
                         color = TextSecondary.copy(alpha = 0.6f),
                         modifier = Modifier.align(Alignment.CenterStart)
