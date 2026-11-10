@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.components
+﻿package com.outlandishomar.acta.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
@@ -37,7 +37,7 @@ import com.outlandishomar.acta.ui.theme.Divider
 import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
 import com.outlandishomar.acta.ui.theme.White
-import com.outlandishomar.acta.ui.theme.SfProText
+import com.outlandishomar.acta.ui.theme.InterText
 import com.outlandishomar.acta.ui.theme.calculateLuminance
 import com.outlandishomar.acta.data.AppSettings
 import java.time.DayOfWeek
@@ -47,17 +47,17 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-// ─── Constants ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-/** Week pager: ±50 000 weeks ≈ ±961 years. */
+/** Week pager: Â±50 000 weeks â‰ˆ Â±961 years. */
 private const val WEEK_PAGE_COUNT = 100_001
 private const val WEEK_INDEX_TODAY = 50_000
 
-/** Month pager: ±5 000 months ≈ ±416 years. */
+/** Month pager: Â±5 000 months â‰ˆ Â±416 years. */
 private const val MONTH_PAGE_COUNT = 10_001
 private const val MONTH_INDEX_TODAY = 5_000
 
-// ─── Week helpers ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Week helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private fun startOfWeek(date: LocalDate): LocalDate {
     val currentDay = date.dayOfWeek.value
@@ -76,7 +76,7 @@ private fun dateToWeekPage(date: LocalDate, todayStart: LocalDate): Int {
     return (WEEK_INDEX_TODAY + weeksBetween).toInt()
 }
 
-// ─── Month helpers ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Month helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 private fun monthPageToYearMonth(page: Int, todayYm: YearMonth): YearMonth {
     val offset = (page - MONTH_INDEX_TODAY).toLong()
@@ -88,7 +88,7 @@ private fun yearMonthToMonthPage(ym: YearMonth, todayYm: YearMonth): Int {
     return (MONTH_INDEX_TODAY + months).toInt()
 }
 
-// ─── Main Composable ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Composable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 fun CalendarStrip(
@@ -131,16 +131,16 @@ fun CalendarStrip(
                 targetState = isExpanded,
                 transitionSpec = {
                     fadeIn(
-                        animationSpec = tween(300)
+                        animationSpec = tween(180)
                     ).togetherWith(
-                        fadeOut(animationSpec = tween(150))
+                        fadeOut(animationSpec = tween(90))
                     ).using(
                         SizeTransform(
                             clip = true,
                             sizeAnimationSpec = { _, _ ->
                                 spring(
-                                    dampingRatio = 0.85f,
-                                    stiffness = 300f
+                                    dampingRatio = 0.9f,
+                                    stiffness = 650f
                                 )
                             }
                         )
@@ -180,7 +180,7 @@ fun CalendarStrip(
     }
 }
 
-// ─── Week View (existing pager logic) ───────────────────────────────────────────
+// â”€â”€â”€ Week View (existing pager logic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun WeekView(
@@ -205,7 +205,7 @@ private fun WeekView(
         }
     }
 
-    // Sync: selectedDate → pager
+    // Sync: selectedDate â†’ pager
     LaunchedEffect(selectedDate) {
         val targetPage = dateToWeekPage(selectedDate, todayStart)
         if (pagerState.currentPage != targetPage) {
@@ -213,7 +213,7 @@ private fun WeekView(
         }
     }
 
-    // Sync: pager → selectedDate
+    // Sync: pager â†’ selectedDate
     LaunchedEffect(pagerState.settledPage) {
         val settledStart = weekPageToStartOfWeek(pagerState.settledPage, todayStart)
         val currentStart = startOfWeek(selectedDate)
@@ -228,7 +228,7 @@ private fun WeekView(
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxWidth(),
-        beyondViewportPageCount = 1,
+        beyondViewportPageCount = 0,
         key = { it }
     ) { page ->
         val startOfWeekDay = weekPageToStartOfWeek(page, todayStart)
@@ -255,7 +255,7 @@ private fun WeekView(
     }
 }
 
-// ─── Month View ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Month View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun MonthView(
@@ -273,7 +273,7 @@ private fun MonthView(
         pageCount = { MONTH_PAGE_COUNT }
     )
 
-    // Sync: selectedDate → pager
+    // Sync: selectedDate â†’ pager
     LaunchedEffect(selectedDate) {
         val targetPage = yearMonthToMonthPage(YearMonth.from(selectedDate), todayYm)
         if (pagerState.currentPage != targetPage) {
@@ -281,7 +281,7 @@ private fun MonthView(
         }
     }
 
-    // Sync: pager settled → update selectedDate month if user swiped
+    // Sync: pager settled â†’ update selectedDate month if user swiped
     LaunchedEffect(pagerState.settledPage) {
         val settledYm = monthPageToYearMonth(pagerState.settledPage, todayYm)
         val currentYm = YearMonth.from(selectedDate)
@@ -294,7 +294,7 @@ private fun MonthView(
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxWidth(),
-        beyondViewportPageCount = 1,
+        beyondViewportPageCount = 0,
         key = { it }
     ) { page ->
         val ym = monthPageToYearMonth(page, todayYm)
@@ -360,7 +360,7 @@ private fun MonthGrid(
                         fontWeight = FontWeight.Medium,
                         color = TextSecondary,
                         textAlign = TextAlign.Center,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                 }
             }
@@ -394,7 +394,7 @@ private fun MonthGrid(
     }
 }
 
-// ─── Shared Day Cell ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Shared Day Cell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun DayCell(
@@ -407,15 +407,17 @@ private fun DayCell(
     onClick: () -> Unit
 ) {
     val selectedTextColor = if (Blue500.calculateLuminance() <= 0.5f) Color.White else Color(0xFF1E1E1E)
-    val numberColor by animateColorAsState(
-        targetValue = when {
-            !isCurrentMonth -> TextSecondary.copy(alpha = 0.35f)
-            isSelected -> selectedTextColor
-            isToday -> Blue500
-            else -> TextPrimary
-        },
-        label = "numColor"
-    )
+    val targetColor = when {
+        !isCurrentMonth -> TextSecondary.copy(alpha = 0.35f)
+        isSelected -> selectedTextColor
+        isToday -> Blue500
+        else -> TextPrimary
+    }
+    val numberColor = if (compact) {
+        animateColorAsState(targetValue = targetColor, label = "numColor").value
+    } else {
+        targetColor
+    }
 
     if (compact) {
         // Week view: shows day name + number
@@ -439,7 +441,7 @@ private fun DayCell(
                 fontWeight = FontWeight.Medium,
                 color = if (isSelected) Blue500 else TextSecondary,
                 textAlign = TextAlign.Center,
-                fontFamily = SfProText
+                fontFamily = InterText
             )
 
             Spacer(Modifier.height(8.dp))

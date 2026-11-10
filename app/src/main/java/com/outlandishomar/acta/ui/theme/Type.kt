@@ -10,19 +10,19 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.sp
 import com.outlandishomar.acta.R
 
-val SfProText = FontFamily(
-    Font(R.font.sf_pro_text_regular, FontWeight.Normal),
-    Font(R.font.sf_pro_text_medium, FontWeight.Medium),
-    Font(R.font.sf_pro_text_semibold, FontWeight.SemiBold)
+val InterText = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_medium, FontWeight.Medium),
+    Font(R.font.inter_semibold, FontWeight.SemiBold)
 )
 
-val SfProDisplay = FontFamily(
-    Font(R.font.sf_pro_display_bold, FontWeight.Bold)
+val InterDisplay = FontFamily(
+    Font(R.font.inter_display_bold, FontWeight.Bold)
 )
 
 val Typography = Typography(
     displayLarge = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.Bold,
         fontSize = 57.sp,
         lineHeight = 64.sp,
@@ -31,7 +31,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     displayMedium = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.Bold,
         fontSize = 45.sp,
         lineHeight = 52.sp,
@@ -40,7 +40,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     displaySmall = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.Bold,
         fontSize = 36.sp,
         lineHeight = 44.sp,
@@ -49,7 +49,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     headlineLarge = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp,
@@ -58,7 +58,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     headlineMedium = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
         lineHeight = 36.sp,
@@ -67,7 +67,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     headlineSmall = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
         lineHeight = 32.sp,
@@ -76,7 +76,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     titleLarge = TextStyle(
-        fontFamily = SfProDisplay,
+        fontFamily = InterDisplay,
         fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
@@ -85,7 +85,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     titleMedium = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
@@ -94,7 +94,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     titleSmall = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
@@ -103,7 +103,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     bodyLarge = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp,
@@ -112,7 +112,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     bodyMedium = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp,
@@ -121,7 +121,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     bodySmall = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 16.sp,
@@ -130,7 +130,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     labelLarge = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,
@@ -139,7 +139,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     labelMedium = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
@@ -148,7 +148,7 @@ val Typography = Typography(
         textAlign = TextAlign.Left
     ),
     labelSmall = TextStyle(
-        fontFamily = SfProText,
+        fontFamily = InterText,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         lineHeight = 16.sp,

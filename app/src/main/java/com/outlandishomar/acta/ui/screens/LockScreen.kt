@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.screens
+﻿package com.outlandishomar.acta.ui.screens
 
 import android.app.Activity
 import android.app.KeyguardManager
@@ -185,14 +185,14 @@ fun LockScreen(onUnlock: (unlockedViaRecovery: Boolean) -> Unit) {
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = "Use your device passcode to continue",
                         fontSize = 14.sp,
                         color = TextSecondary,
-                        fontFamily = SfProText,
+                        fontFamily = InterText,
                         textAlign = TextAlign.Center
                     )
 
@@ -226,7 +226,7 @@ fun LockScreen(onUnlock: (unlockedViaRecovery: Boolean) -> Unit) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Blue500,
-                    fontFamily = SfProText,
+                    fontFamily = InterText,
                     modifier = Modifier
                         .clickable {
                             activeSubView = null
@@ -251,14 +251,14 @@ fun LockScreen(onUnlock: (unlockedViaRecovery: Boolean) -> Unit) {
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = if (isError) "Incorrect PIN, try again" else "Enter your PIN to continue",
                         fontSize = 14.sp,
                         color = if (isError) MaterialTheme.colorScheme.error else TextSecondary,
-                        fontFamily = SfProText,
+                        fontFamily = InterText,
                         textAlign = TextAlign.Center
                     )
 
@@ -338,7 +338,7 @@ fun LockScreen(onUnlock: (unlockedViaRecovery: Boolean) -> Unit) {
                                             fontSize = 25.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = TextPrimary,
-                                            fontFamily = SfProText
+                                            fontFamily = InterText
                                         )
                                     }
                                 }
@@ -355,7 +355,7 @@ fun LockScreen(onUnlock: (unlockedViaRecovery: Boolean) -> Unit) {
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Blue500,
-                    fontFamily = SfProText,
+                    fontFamily = InterText,
                     modifier = Modifier
                         .clickable {
                             activeSubView = null

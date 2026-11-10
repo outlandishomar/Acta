@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.screens
+﻿package com.outlandishomar.acta.ui.screens
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
@@ -114,30 +114,36 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
     ) {
         val exceptionsMap: Map<Int, List<com.outlandishomar.acta.data.model.TaskException>> = allExceptions.groupBy { it.taskId }
         val completionsSet: Set<Pair<Int, Long>> = allCompletions.map { it.taskId to it.dateMillis }.toSet()
+        val cache = HashMap<LocalDate, Boolean>()
+        val today = LocalDate.now()
+        val zone = ZoneId.systemDefault()
+
         val lambda: (LocalDate) -> Boolean = { date: LocalDate ->
-            val isToday = (date == LocalDate.now())
-            val visibleTasks = allCalendarTasks.filter { task ->
-                !com.outlandishomar.acta.data.shouldHideTask(task = task, isInboxTask = false, isTodayTask = isToday)
-            }
-            val dateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            visibleTasks.any { task ->
-                if (task.repeatMode == "ONCE") {
-                    task.date == dateMillis && !task.isCompleted
-                } else {
-                    val startDate = Instant.ofEpochMilli(task.date)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-                    val occurs = com.outlandishomar.acta.data.util.RepeatTaskCalculator.doesTaskOccurOnDate(task, startDate, date)
-                    if (occurs) {
-                        val taskExceptions = exceptionsMap[task.id] ?: emptyList()
-                        val hasException = taskExceptions.any { it.dateMillis == dateMillis }
-                        if (!hasException) {
-                            !completionsSet.contains(task.id to dateMillis)
+            cache.getOrPut(date) {
+                val isToday = (date == today)
+                val visibleTasks = allCalendarTasks.filter { task ->
+                    !com.outlandishomar.acta.data.shouldHideTask(task = task, isInboxTask = false, isTodayTask = isToday)
+                }
+                val dateMillis = date.atStartOfDay(zone).toInstant().toEpochMilli()
+                visibleTasks.any { task ->
+                    if (task.repeatMode == "ONCE") {
+                        task.date == dateMillis && !task.isCompleted
+                    } else {
+                        val startDate = Instant.ofEpochMilli(task.date)
+                            .atZone(zone)
+                            .toLocalDate()
+                        val occurs = com.outlandishomar.acta.data.util.RepeatTaskCalculator.doesTaskOccurOnDate(task, startDate, date)
+                        if (occurs) {
+                            val taskExceptions = exceptionsMap[task.id] ?: emptyList()
+                            val hasException = taskExceptions.any { it.dateMillis == dateMillis }
+                            if (!hasException) {
+                                !completionsSet.contains(task.id to dateMillis)
+                            } else {
+                                false
+                            }
                         } else {
                             false
                         }
-                    } else {
-                        false
                     }
                 }
             }
@@ -164,7 +170,7 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
 
     val filteredTasks = tasks
 
-    // Local copy for reordering — synchronized with dayTasksState
+    // Local copy for reordering â€” synchronized with dayTasksState
     var localTasks by remember(dayTasksState.date, dayTasksState.tasks) {
         mutableStateOf(dayTasksState.tasks)
     }
@@ -601,8 +607,8 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
                                                     .fillMaxWidth()
                                                     .animateItem(
                                                         placementSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioLowBouncy,
-                                                            stiffness = Spring.StiffnessLow
+                                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                                            stiffness = Spring.StiffnessMediumLow
                                                         )
                                                     )
                                                     .longPressDraggableHandle(
@@ -705,7 +711,7 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
                                     text = "Move to Unscheduled",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium,
-                                    fontFamily = SfProText,
+                                    fontFamily = InterText,
                                     color = pillTextColor
                                 )
                             }
@@ -889,7 +895,7 @@ fun TaskTopBar(
                     includeFontPadding = false
                 )
             ),
-            fontFamily = SfProDisplay,
+            fontFamily = InterDisplay,
             modifier = Modifier.appleClickable(onCalendarClick)
         )
         Row(
@@ -933,7 +939,7 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "✓",
+                text = "âœ“",
                 fontSize = 32.sp,
                 color = Blue500,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Default

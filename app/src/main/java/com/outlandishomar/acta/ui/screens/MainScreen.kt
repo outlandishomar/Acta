@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.screens
+﻿package com.outlandishomar.acta.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -27,7 +27,7 @@ import com.outlandishomar.acta.ui.theme.BottomBarBackground
 import com.outlandishomar.acta.ui.theme.Blue500
 import com.outlandishomar.acta.ui.theme.TextSecondary
 import com.outlandishomar.acta.ui.theme.White
-import com.outlandishomar.acta.ui.theme.SfProText
+import com.outlandishomar.acta.ui.theme.InterText
 import com.outlandishomar.acta.ui.viewmodel.TaskViewModel
 import com.outlandishomar.acta.ui.theme.ThemeState
 import androidx.compose.ui.Alignment
@@ -107,11 +107,11 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                                 text = BottomTab.Tasks.label,
                                 fontSize = 12.sp,
                                 color = tasksColor,
-                                fontFamily = SfProText
+                                fontFamily = InterText
                             )
                         }
 
-                        // Middle Add Button — plain image, no container
+                        // Middle Add Button â€” plain image, no container
                         Box(
                             modifier = Modifier
                                 .offset(y = (-8).dp)
@@ -164,7 +164,7 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                                 text = BottomTab.Inbox.label,
                                 fontSize = 12.sp,
                                 color = inboxColor,
-                                fontFamily = SfProText
+                                fontFamily = InterText
                             )
                         }
                     }

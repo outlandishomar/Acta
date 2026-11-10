@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.components
+﻿package com.outlandishomar.acta.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -294,7 +294,7 @@ fun TaskActionSheet(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         color = TextPrimary,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                 }
                 Icon(

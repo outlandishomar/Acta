@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.screens
+﻿package com.outlandishomar.acta.ui.screens
 
 import android.os.Build
 import androidx.compose.foundation.background
@@ -180,7 +180,7 @@ fun InboxScreen(
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = TextSecondary,
-                                fontFamily = SfProText,
+                                fontFamily = InterText,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(Modifier.height(4.dp))
@@ -190,7 +190,7 @@ fun InboxScreen(
                                 fontWeight = FontWeight.Normal,
                                 color = TextSecondary.copy(alpha = 0.6f),
                                 textAlign = TextAlign.Center,
-                                fontFamily = SfProText
+                                fontFamily = InterText
                             )
                             Spacer(Modifier.height(20.dp))
                             Surface(
@@ -216,7 +216,7 @@ fun InboxScreen(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = TextPrimary,
-                                        fontFamily = SfProText
+                                        fontFamily = InterText
                                     )
                                 }
                             }

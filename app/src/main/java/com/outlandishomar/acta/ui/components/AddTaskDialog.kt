@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.components
+﻿package com.outlandishomar.acta.ui.components
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -257,7 +257,7 @@ fun AddTaskDialog(
         }
     }
 
-    // Arrow rotation: 0° = pointing up (collapsed), 180° = pointing down (expanded)
+    // Arrow rotation: 0Â° = pointing up (collapsed), 180Â° = pointing down (expanded)
     val arrowRotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         label = "arrowRotation"
@@ -355,7 +355,7 @@ fun AddTaskDialog(
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = TextPrimary,
-                                    fontFamily = SfProText,
+                                    fontFamily = InterText,
                                     modifier = Modifier.padding(end = 4.dp)
                                 )
                                 Icon(
@@ -384,7 +384,7 @@ fun AddTaskDialog(
                                 fontSize = 20.sp,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Medium,
-                                fontFamily = SfProText,
+                                fontFamily = InterText,
                                 textDirection = androidx.compose.ui.text.style.TextDirection.Content,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Left
                             ),
@@ -436,7 +436,7 @@ fun AddTaskDialog(
                             fontSize = 16.sp,
                             color = TextSecondary,
                             fontWeight = FontWeight.Normal,
-                            fontFamily = SfProText,
+                            fontFamily = InterText,
                             textDirection = androidx.compose.ui.text.style.TextDirection.Content,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Left
                         ),
@@ -483,7 +483,7 @@ fun AddTaskDialog(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = TextSecondary,
-                                fontFamily = SfProText
+                                fontFamily = InterText
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
@@ -566,7 +566,7 @@ fun AddTaskDialog(
                                             textStyle = androidx.compose.ui.text.TextStyle(
                                                 color = TextPrimary, 
                                                 fontSize = 14.sp, 
-                                                fontFamily = SfProText,
+                                                fontFamily = InterText,
                                                 textDirection = androidx.compose.ui.text.style.TextDirection.Content,
                                                 textAlign = androidx.compose.ui.text.style.TextAlign.Left
                                             ),
@@ -689,7 +689,7 @@ fun AddTaskDialog(
                     }
                 } // Close inner Column
 
-                // Toolbar (+ and ✓ buttons)
+                // Toolbar (+ and âœ“ buttons)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -981,7 +981,7 @@ fun AddTaskDialog(
     }
 }
 
-// ─── "When?" Section ───────────────────────────────────────────────────────────
+// â”€â”€â”€ "When?" Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun WhenSection(
@@ -1343,7 +1343,7 @@ private fun TimeScrollPicker(
     }
 }
 
-// ─── "How often?" Section ──────────────────────────────────────────────────────
+// â”€â”€â”€ "How often?" Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun HowOftenSection(
@@ -2121,15 +2121,15 @@ fun AdvancedNotesDialog(
                                         val prevLine = oldText.substring(lineStart, insertIndex)
 
                                         when {
-                                            prevLine == "• " || prevLine == "•" -> {
+                                            prevLine == "â€¢ " || prevLine == "â€¢" -> {
                                                 val cleanText = oldText.substring(0, lineStart) + "\n" + oldText.substring(insertIndex)
                                                 val newCursor = lineStart + 1
                                                 spans = RichTextHelper.adjustSpansForDeletion(spans, lineStart, insertIndex - lineStart)
                                                 textFieldValue = TextFieldValue(cleanText, TextRange(newCursor))
                                                 return@BasicTextField
                                             }
-                                            prevLine.startsWith("• ") -> {
-                                                val bulletPrefix = "• "
+                                            prevLine.startsWith("â€¢ ") -> {
+                                                val bulletPrefix = "â€¢ "
                                                 val adjustedText = newText.substring(0, insertIndex + 1) + bulletPrefix + newText.substring(insertIndex + 1)
                                                 val newCursor = insertIndex + 1 + bulletPrefix.length
                                                 spans = RichTextHelper.adjustSpansForInsertion(spans, insertIndex, 1 + bulletPrefix.length, isBoldActive, isItalicActive, isUnderlineActive, isStrikethroughActive, activeHighlightColor, 0)
@@ -2176,7 +2176,7 @@ fun AdvancedNotesDialog(
 
                                     val lineStart = oldText.lastIndexOf('\n', (deleteStart - 1).coerceAtLeast(0)).let { if (it == -1) 0 else it + 1 }
                                     val linePrefix = oldText.substring(lineStart, (deleteStart + deletedCount).coerceAtMost(oldText.length))
-                                    if (linePrefix == "• " && deleteStart <= lineStart + 2) {
+                                    if (linePrefix == "â€¢ " && deleteStart <= lineStart + 2) {
                                         val cleanText = oldText.substring(0, lineStart) + oldText.substring((lineStart + 2).coerceAtMost(oldText.length))
                                         spans = RichTextHelper.adjustSpansForDeletion(spans, lineStart, 2)
                                         textFieldValue = TextFieldValue(cleanText, TextRange(lineStart))
@@ -2196,7 +2196,7 @@ fun AdvancedNotesDialog(
                                 fontSize = 17.sp,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Normal,
-                                fontFamily = SfProText,
+                                fontFamily = InterText,
                                 lineHeight = 24.sp,
                                 textDirection = androidx.compose.ui.text.style.TextDirection.Content,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Left
@@ -2214,7 +2214,7 @@ fun AdvancedNotesDialog(
                                             color = TextSecondary.copy(alpha = 0.5f),
                                             fontSize = 17.sp,
                                             fontWeight = FontWeight.Normal,
-                                            fontFamily = SfProText
+                                            fontFamily = InterText
                                         )
                                     }
                                     innerTextField()
@@ -2319,7 +2319,7 @@ fun AdvancedNotesDialog(
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (activeHeadingLevel > 0) Blue500 else TextPrimary,
-                                        fontFamily = SfProText
+                                        fontFamily = InterText
                                     )
                                 }
 
@@ -2337,7 +2337,7 @@ fun AdvancedNotesDialog(
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isBoldActive) Blue500 else TextPrimary,
-                                        fontFamily = SfProText
+                                        fontFamily = InterText
                                     )
                                 }
 
@@ -2375,7 +2375,7 @@ fun AdvancedNotesDialog(
                                 val curLineStart = currentText.lastIndexOf('\n', (selPos - 1).coerceAtLeast(0)).let { if (it == -1) 0 else it + 1 }
                                 val curLineEnd = currentText.indexOf('\n', selPos).let { if (it == -1) currentText.length else it }
                                 val curLine = if (curLineStart <= curLineEnd && curLineEnd <= currentText.length) currentText.substring(curLineStart, curLineEnd) else ""
-                                val isBulletOnLine = curLine.startsWith("• ")
+                                val isBulletOnLine = curLine.startsWith("â€¢ ")
                                 val isNumberedOnLine = curLine.matches(Regex("^\\d+\\.\\s*.*"))
 
                                 // Bullet list
@@ -2463,7 +2463,7 @@ fun AdvancedNotesDialog(
                                         fontWeight = FontWeight.Medium,
                                         textDecoration = TextDecoration.Underline,
                                         color = if (isUnderlineActive) Blue500 else TextPrimary,
-                                        fontFamily = SfProText
+                                        fontFamily = InterText
                                     )
                                 }
 
@@ -2482,7 +2482,7 @@ fun AdvancedNotesDialog(
                                         fontWeight = FontWeight.Medium,
                                         textDecoration = TextDecoration.LineThrough,
                                         color = if (isStrikethroughActive) Blue500 else TextPrimary,
-                                        fontFamily = SfProText
+                                        fontFamily = InterText
                                     )
                                 }
 
@@ -2552,9 +2552,9 @@ private fun HeadingMenuPopup(
             verticalAlignment = Alignment.CenterVertically
         ) {
             listOf(
-                Triple("H₁", "Heading 1", 1),
-                Triple("H₂", "Heading 2", 2),
-                Triple("H₃", "Heading 3", 3),
+                Triple("Hâ‚", "Heading 1", 1),
+                Triple("Hâ‚‚", "Heading 2", 2),
+                Triple("Hâ‚ƒ", "Heading 3", 3),
                 Triple("Body", "Normal", 0)
             ).forEach { (label, desc, level) ->
                 Box(

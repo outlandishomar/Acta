@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.components
+﻿package com.outlandishomar.acta.ui.components
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.outlandishomar.acta.ui.theme.SfProText
+import com.outlandishomar.acta.ui.theme.InterText
 
 enum class PremiumBadgeVariant {
     MetallicGold,    // Style 1: Subtasks in AddTaskDialog (Chic Metallic Gold Gradient with dark text)
@@ -93,7 +93,7 @@ fun GetPremiumBadge(
                         color = Color(0xFF1F1500),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        fontFamily = SfProText,
+                        fontFamily = InterText,
                         letterSpacing = 0.3.sp
                     )
                 }
@@ -140,7 +140,7 @@ fun GetPremiumBadge(
                             color = Color(0xFFFFD766),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = SfProText,
+                            fontFamily = InterText,
                             letterSpacing = 0.3.sp
                         )
                     }
@@ -187,7 +187,7 @@ fun GetPremiumBadge(
                         color = contentColor,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = SfProText,
+                        fontFamily = InterText,
                         letterSpacing = 0.3.sp
                     )
                 }
@@ -217,7 +217,7 @@ fun GetPremiumBadge(
                         color = Color(0xFFE5B869),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = SfProText,
+                        fontFamily = InterText,
                         letterSpacing = 0.2.sp
                     )
                 }
@@ -251,7 +251,7 @@ fun GetPremiumBadge(
                         color = Color(0xFF201502),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                 }
             }
@@ -289,7 +289,7 @@ fun GetPremiumBadge(
                         color = Color(0xFFFFE082),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                 }
             }

@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.components
+﻿package com.outlandishomar.acta.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -28,7 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.outlandishomar.acta.ui.theme.Red500
-import com.outlandishomar.acta.ui.theme.SfProText
+import com.outlandishomar.acta.ui.theme.InterText
 import com.outlandishomar.acta.ui.theme.ThemeState
 import com.outlandishomar.acta.ui.viewmodel.UndoAction
 
@@ -84,7 +84,7 @@ fun UndoFloatingBar(
                     text = undoAction?.message ?: "Task deleted",
                     color = messageColor,
                     fontSize = 14.sp,
-                    fontFamily = SfProText,
+                    fontFamily = InterText,
                     fontWeight = FontWeight.Medium
                 )
 
@@ -115,7 +115,7 @@ fun UndoFloatingBar(
                             text = "Undo",
                             color = undoTextColor,
                             fontSize = 13.sp,
-                            fontFamily = SfProText,
+                            fontFamily = InterText,
                             fontWeight = FontWeight.SemiBold
                         )
                     }

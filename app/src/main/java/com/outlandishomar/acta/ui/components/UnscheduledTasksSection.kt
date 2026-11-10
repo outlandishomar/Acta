@@ -1,4 +1,4 @@
-package com.outlandishomar.acta.ui.components
+﻿package com.outlandishomar.acta.ui.components
 
 import android.content.ClipData
 import androidx.compose.animation.animateColorAsState
@@ -111,7 +111,7 @@ fun UnscheduledChipsRow(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = if (isHovered) Blue500 else TextSecondary,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                 }
             }
@@ -149,7 +149,7 @@ fun UnscheduledChipsRow(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = TextSecondary,
-                        fontFamily = SfProText
+                        fontFamily = InterText
                     )
                 }
             }
@@ -261,7 +261,7 @@ fun UnscheduledChipItem(
             color = textColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            fontFamily = SfProText,
+            fontFamily = InterText,
             onTextLayout = { titleLayoutResult = it },
             modifier = Modifier.drawWithContent {
                 drawContent()
