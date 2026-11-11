@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.screens
+package com.outlandishomar.acta.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -111,7 +111,7 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                             )
                         }
 
-                        // Middle Add Button â€” plain image, no container
+                        // Middle Add Button — plain image, no container
                         Box(
                             modifier = Modifier
                                 .offset(y = (-8).dp)

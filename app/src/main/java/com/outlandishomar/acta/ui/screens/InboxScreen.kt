@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.screens
+package com.outlandishomar.acta.ui.screens
 
 import android.os.Build
 import androidx.compose.foundation.background

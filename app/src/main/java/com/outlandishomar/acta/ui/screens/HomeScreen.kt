@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.screens
+package com.outlandishomar.acta.ui.screens
 
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
@@ -170,7 +170,7 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
 
     val filteredTasks = tasks
 
-    // Local copy for reordering â€” synchronized with dayTasksState
+    // Local copy for reordering — synchronized with dayTasksState
     var localTasks by remember(dayTasksState.date, dayTasksState.tasks) {
         mutableStateOf(dayTasksState.tasks)
     }
@@ -939,7 +939,7 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "âœ“",
+                text = "✓",
                 fontSize = 32.sp,
                 color = Blue500,
                 fontFamily = androidx.compose.ui.text.font.FontFamily.Default

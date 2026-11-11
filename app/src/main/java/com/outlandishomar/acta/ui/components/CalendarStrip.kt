@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.components
+package com.outlandishomar.acta.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
@@ -47,17 +47,17 @@ import java.time.format.TextStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Constants ──────────────────────────────────────────────────────────────────
 
-/** Week pager: Â±50 000 weeks â‰ˆ Â±961 years. */
+/** Week pager: ±50 000 weeks ≈ ±961 years. */
 private const val WEEK_PAGE_COUNT = 100_001
 private const val WEEK_INDEX_TODAY = 50_000
 
-/** Month pager: Â±5 000 months â‰ˆ Â±416 years. */
+/** Month pager: ±5 000 months ≈ ±416 years. */
 private const val MONTH_PAGE_COUNT = 10_001
 private const val MONTH_INDEX_TODAY = 5_000
 
-// â”€â”€â”€ Week helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Week helpers ───────────────────────────────────────────────────────────────
 
 private fun startOfWeek(date: LocalDate): LocalDate {
     val currentDay = date.dayOfWeek.value
@@ -76,7 +76,7 @@ private fun dateToWeekPage(date: LocalDate, todayStart: LocalDate): Int {
     return (WEEK_INDEX_TODAY + weeksBetween).toInt()
 }
 
-// â”€â”€â”€ Month helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Month helpers ──────────────────────────────────────────────────────────────
 
 private fun monthPageToYearMonth(page: Int, todayYm: YearMonth): YearMonth {
     val offset = (page - MONTH_INDEX_TODAY).toLong()
@@ -88,7 +88,7 @@ private fun yearMonthToMonthPage(ym: YearMonth, todayYm: YearMonth): Int {
     return (MONTH_INDEX_TODAY + months).toInt()
 }
 
-// â”€â”€â”€ Main Composable â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Main Composable ────────────────────────────────────────────────────────────
 
 @Composable
 fun CalendarStrip(
@@ -180,7 +180,7 @@ fun CalendarStrip(
     }
 }
 
-// â”€â”€â”€ Week View (existing pager logic) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Week View (existing pager logic) ───────────────────────────────────────────
 
 @Composable
 private fun WeekView(
@@ -205,7 +205,7 @@ private fun WeekView(
         }
     }
 
-    // Sync: selectedDate â†’ pager
+    // Sync: selectedDate → pager
     LaunchedEffect(selectedDate) {
         val targetPage = dateToWeekPage(selectedDate, todayStart)
         if (pagerState.currentPage != targetPage) {
@@ -213,7 +213,7 @@ private fun WeekView(
         }
     }
 
-    // Sync: pager â†’ selectedDate
+    // Sync: pager → selectedDate
     LaunchedEffect(pagerState.settledPage) {
         val settledStart = weekPageToStartOfWeek(pagerState.settledPage, todayStart)
         val currentStart = startOfWeek(selectedDate)
@@ -255,7 +255,7 @@ private fun WeekView(
     }
 }
 
-// â”€â”€â”€ Month View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Month View ─────────────────────────────────────────────────────────────────
 
 @Composable
 private fun MonthView(
@@ -273,7 +273,7 @@ private fun MonthView(
         pageCount = { MONTH_PAGE_COUNT }
     )
 
-    // Sync: selectedDate â†’ pager
+    // Sync: selectedDate → pager
     LaunchedEffect(selectedDate) {
         val targetPage = yearMonthToMonthPage(YearMonth.from(selectedDate), todayYm)
         if (pagerState.currentPage != targetPage) {
@@ -281,7 +281,7 @@ private fun MonthView(
         }
     }
 
-    // Sync: pager settled â†’ update selectedDate month if user swiped
+    // Sync: pager settled → update selectedDate month if user swiped
     LaunchedEffect(pagerState.settledPage) {
         val settledYm = monthPageToYearMonth(pagerState.settledPage, todayYm)
         val currentYm = YearMonth.from(selectedDate)
@@ -394,7 +394,7 @@ private fun MonthGrid(
     }
 }
 
-// â”€â”€â”€ Shared Day Cell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Shared Day Cell ────────────────────────────────────────────────────────────
 
 @Composable
 private fun DayCell(

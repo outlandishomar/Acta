@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.components
+package com.outlandishomar.acta.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring

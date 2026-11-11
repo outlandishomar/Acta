@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.components
+package com.outlandishomar.acta.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.components
+package com.outlandishomar.acta.ui.components
 
 import android.content.ClipData
 import androidx.compose.animation.animateColorAsState

@@ -1,4 +1,4 @@
-﻿package com.outlandishomar.acta.ui.screens
+package com.outlandishomar.acta.ui.screens
 
 import android.app.Activity
 import android.app.KeyguardManager
