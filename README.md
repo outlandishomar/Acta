@@ -22,7 +22,7 @@
 
 ---
 
-## 📥 Download
+## Download
 
 <div align="center">
   <a href="https://play.google.com/store/apps/details?id=com.outlandishomar.acta">
@@ -30,15 +30,15 @@
   </a>
 </div>
 
-> 💡 Prefer direct APK installation? You can always grab the latest signed APK from the [GitHub Releases](../../releases) page.
+> Prefer direct APK installation? You can always grab the latest signed APK from the [GitHub Releases](../../releases) page.
 
 ---
 
-## ✨ Features Deep-Dive
+## Features Deep-Dive
 
 Acta is designed around flexibility — giving you a clutter-free environment whether you want to jot down a quick thought or plan a complex daily routine.
 
-### 📝 Two Ways to Create Tasks
+### Two Ways to Create Tasks
 * **The Simple Way:** Built for speed. Create tasks with **unlimited subtasks** that you can easily drag-and-drop to reorder or swipe to delete, paired with support for both quick and detailed notes.
 * **The Advanced Way:** Includes everything in the Simple Way, plus full scheduling power:
   * **Time Blocking:** Assign specific times to your tasks to map out your day—even without enabling notifications.
@@ -47,18 +47,18 @@ Acta is designed around flexibility — giving you a clutter-free environment wh
 
 ---
 
-### 📌 Scheduled, Unscheduled & Inbox Workflows
+### Scheduled, Unscheduled & Inbox Workflows
 * **Daily Scheduled Tasks:** Your main timeline organized by date and time along a clean weekly calendar bar.
 * **Unscheduled Bar:** Have tasks you need to get done today, but aren't sure *when*? Place them in the dedicated **Unscheduled Bar** right above your daily list. You can check them off directly from the bar or move tasks between scheduled and unscheduled anytime.
 * **Dedicated Inbox:** A distraction-free space for brain-dumping ideas, book lists, or future goals using the Simple creation flow—no dates or times required.
 
 ---
 
-### 🎨 Personalization: Themes, Colors & Icons
+### Personalization: Themes, Colors & Icons
 Make Acta truly yours with deep visual customization:
-* **Core & Curated Themes:** Switch between **Device Default, Light, and Dark** modes, or pick from **4 crafted color palettes** (*Rosy Taupe, Dust Grey, Silver, and Ash Grey*).
+* **Core & Curated Themes:** Switch between **Device Default, Light, and Dark** modes, or pick from **crafted color palettes**.
 * **Live Custom Color Picker:** Use the interactive color slider or type any **HEX code** to test and set custom **Primary** and **Secondary** colors live. Save your favorite custom combinations directly to your theme collection, or hit reset anytime.
-* **Custom App Icons:** Choose from **3 additional app icons** to match your home screen setup.
+* **Custom App Icons:** Choose from **additional app icons** to match your home screen setup.
 
 <div align="center">
   <img width="320" alt="Custom Color Picker" src="https://github.com/user-attachments/assets/a2900a41-2611-406e-abd3-c51654dbcc07" />
@@ -66,7 +66,7 @@ Make Acta truly yours with deep visual customization:
 
 ---
 
-### 🛡️ Privacy & Security Controls
+### Privacy & Security Controls
 * **Hide Tasks (Presentation Mode):** Need to share your screen or show the app to someone without revealing personal goals? Granularly hide your tasks from view with 4 independent toggles:
   * *Hide All Tasks* (Regular, Today, and Inbox)
   * *Hide Regular Tasks* (Hides calendar/daily tasks while keeping Inbox visible)
@@ -76,16 +76,16 @@ Make Acta truly yours with deep visual customization:
 
 ---
 
-## 🔒 100% Local & Offline-First
+## 100% Local & Offline-First
 
 Your productivity data belongs to you—not a remote server.
 * **Zero Cloud Sync:** Everything is stored locally on your device.
-* **No Tracking or Analytics:** Acta collects zero telemetry, requires no account sign-up, and has no background internet access.
+* **No Tracking:** Acta collects zero telemetry, requires no account sign-up, and has no background internet access.
 * **Full Backup Control:** Easily **export and import** your data locally anytime from the Backup settings, ensuring you never lose your tasks when switching devices.
 
 ---
 
-## 🤝 Support & Contribute
+## Support & Contribute
 
 Acta is completely free and open-source. If you find the app valuable and want to support its maintenance and new features:
 
@@ -98,13 +98,13 @@ Acta is completely free and open-source. If you find the app valuable and want t
 <br />
 
 You can also support the project for free:
-* ⭐ **Star this repository** on GitHub to help more people discover Acta.
-* 🌟 **Leave a 5-star review** on [Google Play](https://play.google.com/store/apps/details?id=com.outlandishomar.acta) — it helps tremendously with store visibility.
-* 🐛 **Report bugs or suggest features** by opening an [Issue](../../issues).
-* 💻 **Contribute code** via [Pull Requests](../../pulls).
+* **Star this repository** on GitHub to help more people discover Acta.
+* **Leave a review** on [Google Play](https://play.google.com/store/apps/details?id=com.outlandishomar.acta) — it helps tremendously with store visibility.
+* **Report bugs or suggest features** by opening an [Issue](../../issues).
+* **Contribute code** via [Pull Requests](../../pulls).
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **GNU General Public License v3.0 (GPLv3)** – see the [LICENSE](LICENSE) file for details.
