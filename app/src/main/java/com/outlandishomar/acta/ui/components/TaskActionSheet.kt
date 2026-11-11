@@ -13,9 +13,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -60,8 +57,7 @@ fun TaskActionSheet(
     onToggleComplete: () -> Unit,
     onToggleSubTask: (SubTask) -> Unit = {},
     onEdit: () -> Unit,
-    onDuplicate: (LocalDate?) -> Unit = {},
-    onToggleHighlight: () -> Unit = {}
+    onDuplicate: (LocalDate?) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -264,45 +260,6 @@ fun TaskActionSheet(
                 }
             } else {
                 Spacer(Modifier.height(16.dp))
-            }
-
-            // Move to Unscheduled / Scheduled Tasks Action Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (ThemeState.isThemeDark) Grey100.copy(alpha = 0.12f) else Grey50)
-                    .clickable {
-                        onToggleHighlight()
-                        onDismiss()
-                    }
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (task.isHighlighted) Icons.Filled.DateRange else Icons.Filled.Schedule,
-                        contentDescription = null,
-                        tint = Blue500,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = if (task.isHighlighted) "Move to Day Schedule" else "Move to Unscheduled",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextPrimary,
-                        fontFamily = InterText
-                    )
-                }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = TextSecondary,
-                    modifier = Modifier.size(18.dp)
-                )
             }
 
             // Bottom Bar: Delete (Left), Complete/Incomplete (Right)

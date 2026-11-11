@@ -2,13 +2,17 @@ package com.outlandishomar.acta.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -25,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.outlandishomar.acta.R
 import com.outlandishomar.acta.data.AppIconManager
+import com.outlandishomar.acta.ui.theme.Blue500
+import com.outlandishomar.acta.ui.theme.Divider
 import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
 import com.outlandishomar.acta.ui.theme.ThemeState
@@ -178,6 +184,8 @@ private val usedLibraries = listOf(
 fun AboutAppScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
     var showUsedLibrariesDialog by remember { mutableStateOf(false) }
+    var showDonateDialog by remember { mutableStateOf(false) }
+
     val currentIcon = AppIconManager.currentIcon
     val isDarkScheme = ThemeState.isThemeDark || White.calculateLuminance() <= 0.5f
     val logoRes = when (currentIcon) {
@@ -204,7 +212,17 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                     }
                 },
                 actions = {
-                    Spacer(modifier = Modifier.width(48.dp))
+                    IconButton(
+                        onClick = { showDonateDialog = true },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.VolunteerActivism,
+                            contentDescription = "Donate",
+                            tint = TextPrimary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
             )
@@ -411,7 +429,8 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
         Dialog(onDismissRequest = { showUsedLibrariesDialog = false }) {
             Surface(
                 shape = RoundedCornerShape(22.dp),
-                color = if (isDarkScheme) Color(0xFF262628) else Color(0xFFF7F7F8),
+                color = White,
+                border = BorderStroke(1.dp, Divider.copy(alpha = 0.2f)),
                 tonalElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -502,6 +521,117 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                                 color = linkColor
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    if (showDonateDialog) {
+        Dialog(onDismissRequest = { showDonateDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = White,
+                border = BorderStroke(1.dp, Divider.copy(alpha = 0.2f)),
+                tonalElevation = 6.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                color = TextPrimary.copy(alpha = 0.08f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.VolunteerActivism,
+                            contentDescription = null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Text(
+                        text = "Support Acta",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = "Acta is free, open-source and keeps your data for you only. This project has been and is still being made by a single developer. You can either help financially or by leaving a review on the store, starring the repo, or contributing on GitHub. Your help will definitely keep me able to maintain and keep this project alive.",
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 21.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    val donateBtnContainerColor = Blue500
+                    val donateBtnContentColor = if (donateBtnContainerColor.calculateLuminance() > 0.5f) Color(0xFF1E1E1E) else Color.White
+
+                    Button(
+                        onClick = {
+                            try {
+                                val intent = Intent(
+                                    Intent.ACTION_VIEW,
+                                    Uri.parse("https://ko-fi.com/outlandishomar")
+                                )
+                                context.startActivity(intent)
+                            } catch (_: Exception) {}
+                            showDonateDialog = false
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = donateBtnContainerColor,
+                            contentColor = donateBtnContentColor
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.VolunteerActivism,
+                            contentDescription = null,
+                            tint = donateBtnContentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Donate",
+                            color = donateBtnContentColor,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = { showDonateDialog = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Maybe later",
+                            color = TextSecondary,
+                            fontSize = 14.sp
+                        )
                     }
                 }
             }

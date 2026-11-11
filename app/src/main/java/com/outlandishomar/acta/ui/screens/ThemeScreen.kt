@@ -391,7 +391,7 @@ fun ThemeScreen(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "Drag your finger on the palette or type a HEX code to test custom colors live",
+                text = "Drag your finger on the palette or type a HEX code to set custom colors live",
                 fontSize = 13.sp,
                 color = TextSecondary,
                 lineHeight = 18.sp

@@ -104,7 +104,7 @@ fun LockScreenSettingsScreen(onBackClick: () -> Unit, onBackupClick: () -> Unit)
         ) {
             // Header Description (Centered at top)
             Text(
-                text = "Protect your tasks and thoughts with a 4-digit PIN code or device passcode when opening the app.",
+                text = "Secure your tasks and keep them private with a 4-digit PIN code or your device passcode when opening the app",
                 fontSize = 13.sp,
                 color = TextSecondary,
                 lineHeight = 18.sp,

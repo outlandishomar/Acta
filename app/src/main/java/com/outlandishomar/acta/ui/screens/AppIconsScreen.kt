@@ -90,7 +90,7 @@ fun AppIconsContent(modifier: Modifier = Modifier) {
             .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
         Text(
-            text = "Choose an icon for your home screen. The selected icon will update across your launcher.",
+            text = "Choose an icon for your home screen.\nThe selected icon will update across your launcher.",
             fontSize = 14.sp,
             color = TextSecondary,
             lineHeight = 20.sp,
@@ -132,24 +132,6 @@ fun AppIconsContent(modifier: Modifier = Modifier) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        // Notice / footnote
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Divider.copy(alpha = 0.35f))
-                .padding(horizontal = 16.dp, vertical = 14.dp)
-        ) {
-            Text(
-                text = "Tip: Some Android launchers may take a few seconds to refresh the home screen icon.",
-                fontSize = 12.sp,
-                color = TextSecondary,
-                lineHeight = 17.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 

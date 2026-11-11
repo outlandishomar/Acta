@@ -55,7 +55,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
 
             // Centered Description Text at Top Center of page
             Text(
-                text = "Hide your tasks from the application view whenever you want to demonstrate or present the app.",
+                text = "Keep your tasks private and hide them whenever you want to present the app",
                 fontSize = 14.sp,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
@@ -83,7 +83,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Hide regular, today, and inbox tasks",
+                        text = "All (includes: past and upcoming days tasks, today's and inbox tasks)",
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -127,7 +127,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Hide calendar and daily tasks, keeping inbox intact",
+                        text = "All without the inbox",
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -184,7 +184,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Hide tasks for today only, keeping other days intact",
+                        text = "Hides only today's and keeps past and present days tasks and inbox tasks",
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -241,7 +241,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Hide inbox items, keeping regular tasks intact",
+                        text = "Hide only inbox tasks",
                         fontSize = 13.sp,
                         color = TextSecondary
                     )

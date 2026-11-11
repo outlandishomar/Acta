@@ -772,9 +772,6 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
             onDuplicate = { targetDate ->
                 viewModel.duplicateTask(task, subTasksMap[task.id] ?: emptyList(), targetDate)
                 taskForActionSheet = null
-            },
-            onToggleHighlight = {
-                viewModel.toggleTaskHighlighted(task)
             }
         )
     }
