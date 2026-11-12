@@ -1,6 +1,7 @@
 package com.outlandishomar.acta.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.outlandishomar.acta.data.local.AppDatabase
@@ -686,10 +687,100 @@ data class DayTasksState(
     }
 
     init {
+        seedGuideTasksIfNeeded()
         viewModelScope.launch {
             repository.getTasksByDate(LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()).collectLatest {
                 updateWidget()
             }
+        }
+    }
+
+    private fun seedGuideTasksIfNeeded() {
+        val app = getApplication<Application>()
+        val prefs = app.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        if (prefs.getBoolean("has_seeded_guide_tasks", false)) return
+
+        viewModelScope.launch {
+            val existingTasks = AppDatabase.getInstance(app).taskDao().getAllTasks()
+            if (existingTasks.isEmpty()) {
+                val todayMillis = LocalDate.now()
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli()
+                val now = System.currentTimeMillis()
+
+                // 1. Get Started
+                repository.addTask(
+                    Task(
+                        title = "Get Started",
+                        description = "Welcome to Acta!\nTap the checkbox next to the task to complete it.\nAfterward, tap the task below to continue the guide.",
+                        date = todayMillis,
+                        orderIndex = 0,
+                        createdAt = now
+                    )
+                )
+
+                // 2. Simple task creation (with 2 subtasks)
+                val simpleTaskId = repository.addTask(
+                    Task(
+                        title = "Simple task creation",
+                        description = "Begin by tapping the '+' button at the bottom center of your screen\n\nThen type your task main header text and some notes underneath it if you like\n\nAnd to add subtasks you will need to tap the '+' at the bottom left of the task's creation pop up",
+                        date = todayMillis,
+                        orderIndex = 1,
+                        createdAt = now + 1
+                    )
+                ).toInt()
+                repository.addSubTask(
+                    SubTask(
+                        taskId = simpleTaskId,
+                        title = "Add some notes to the new task",
+                        createdAt = now + 1
+                    )
+                )
+                repository.addSubTask(
+                    SubTask(
+                        taskId = simpleTaskId,
+                        title = "Add subtasks",
+                        createdAt = now + 2
+                    )
+                )
+
+                // 3. Advanced task creation
+                repository.addTask(
+                    Task(
+                        title = "Advanced task creation",
+                        description = "You can customize your task the way you like by using advanced features like\n\n<h1>• <u>Advanced notes</u></h1>\n\nTap on \"Advanced\" underneath the notes section to view a fullscreen page pitched with text tools to help you organize tasks.\n\n<h1>• <u>Advanced button</u></h1>\n\nTap on the \"Advanced\" button on the task pop up at your top right and discover some useful features you can use to do it your own way",
+                        date = todayMillis,
+                        orderIndex = 2,
+                        createdAt = now + 2
+                    )
+                )
+
+                // 4. Fill your inbox
+                repository.addTask(
+                    Task(
+                        title = "Fill your inbox",
+                        description = "Find your Inbox on the bottom right next to the '+' button",
+                        date = todayMillis,
+                        orderIndex = 3,
+                        createdAt = now + 3
+                    )
+                )
+
+                // 5. Make it your own
+                repository.addTask(
+                    Task(
+                        title = "Make it your own",
+                        description = "Discover the full potential of Acta with customizable features in settings",
+                        date = todayMillis,
+                        orderIndex = 4,
+                        createdAt = now + 4
+                    )
+                )
+
+                updateWidget()
+            }
+            prefs.edit().putBoolean("has_seeded_guide_tasks", true).apply()
         }
     }
 }
