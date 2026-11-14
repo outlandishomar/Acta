@@ -43,7 +43,7 @@ fun AppIconsScreen(onBackClick: () -> Unit) {
     val currentIcon = AppIconManager.currentIcon
 
     Scaffold(
-        containerColor = White,
+        containerColor = TopBarBackground,
         topBar = {
             TopAppBar(
                 title = {
@@ -69,7 +69,7 @@ fun AppIconsScreen(onBackClick: () -> Unit) {
                     Spacer(modifier = Modifier.width(48.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = White
+                    containerColor = TopBarBackground
                 )
             )
         }

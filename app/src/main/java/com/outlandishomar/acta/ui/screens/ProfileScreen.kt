@@ -49,7 +49,7 @@ fun ProfileScreen(onBackClick: () -> Unit) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = White,
+            containerColor = TopBarBackground,
             topBar = {
                 TopAppBar(
                     title = {
@@ -65,7 +65,7 @@ fun ProfileScreen(onBackClick: () -> Unit) {
                     actions = {
                         Spacer(modifier = Modifier.width(48.dp))
                     },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = TopBarBackground)
                 )
             }
         ) { innerPadding ->

@@ -120,7 +120,7 @@ fun ThemeScreen(
     }
 
     Scaffold(
-        containerColor = White,
+        containerColor = TopBarBackground,
         topBar = {
             TopAppBar(
                 navigationIcon = {

@@ -34,6 +34,7 @@ import com.outlandishomar.acta.ui.theme.Divider
 import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
 import com.outlandishomar.acta.ui.theme.ThemeState
+import com.outlandishomar.acta.ui.theme.TopBarBackground
 import com.outlandishomar.acta.ui.theme.White
 import com.outlandishomar.acta.ui.theme.calculateLuminance
 
@@ -198,7 +199,7 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
     val linkColor = if (isDarkScheme) Color(0xFF64B5F6) else Color(0xFF1976D2)
 
     Scaffold(
-        containerColor = White,
+        containerColor = TopBarBackground,
         topBar = {
             TopAppBar(
                 title = {
@@ -224,7 +225,7 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TopBarBackground)
             )
         }
     ) { innerPadding ->

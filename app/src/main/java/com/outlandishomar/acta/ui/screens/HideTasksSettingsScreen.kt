@@ -24,7 +24,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
     val context = LocalContext.current
 
     Scaffold(
-        containerColor = White,
+        containerColor = TopBarBackground,
         topBar = {
             TopAppBar(
                 title = {
@@ -40,7 +40,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
                 actions = {
                     Spacer(modifier = Modifier.width(48.dp))
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = TopBarBackground)
             )
         }
     ) { innerPadding ->
