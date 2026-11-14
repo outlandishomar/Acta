@@ -73,6 +73,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import com.outlandishomar.acta.data.AppSettings
+import com.outlandishomar.acta.data.isTodayUserBirthday
 import com.outlandishomar.acta.data.shouldHideTask
 import com.outlandishomar.acta.data.model.SubTask
 import com.outlandishomar.acta.data.model.Task
@@ -444,10 +445,16 @@ fun HomeScreen(viewModel: TaskViewModel, openTaskId: Int = -1, onTaskOpened: () 
                             .background(TopBarBackground)
                             .statusBarsPadding()
                     ) {
+                        val displayName = AppSettings.userName.trim().ifEmpty { "User" }
+                        val greetingTitle = if (isTodayUserBirthday()) {
+                            "Happy Birthday, $displayName"
+                        } else {
+                            "Hi, $displayName"
+                        }
                         TaskTopBar(
                             selectedDate = selectedDate,
                             onCalendarClick = { showDatePicker = true },
-                            titleText = "Hi, ${AppSettings.userName.trim().ifEmpty { "User" }}",
+                            titleText = greetingTitle,
                             isTitleClickable = false
                         )
                         CalendarStrip(
