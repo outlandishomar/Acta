@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import androidx.glance.appwidget.updateAll
 import androidx.compose.ui.res.painterResource
 import com.outlandishomar.acta.R
+import com.outlandishomar.acta.ui.components.SettingsBackgroundArt
 import com.outlandishomar.acta.ui.theme.*
 
 import com.outlandishomar.acta.ui.viewmodel.TaskViewModel
@@ -201,12 +202,18 @@ fun SettingsScreen(
                 )
             }
         ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
         ) {
+            SettingsBackgroundArt(modifier = Modifier.fillMaxSize())
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+            ) {
             Spacer(modifier = Modifier.height(12.dp))
 
             val formattedBirthday = remember(AppSettings.userBirthday) {
@@ -274,6 +281,7 @@ fun SettingsScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }
