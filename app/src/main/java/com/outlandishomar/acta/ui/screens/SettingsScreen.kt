@@ -186,7 +186,7 @@ fun SettingsScreen(
         HideTasksSettingsScreen(viewModel = viewModel, onBackClick = { showHideTasksSettings = false })
     } else {
         Scaffold(
-            containerColor = White,
+            containerColor = TopBarBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 CenterAlignedTopAppBar(
@@ -198,7 +198,7 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Bold
                         )
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = TopBarBackground)
                 )
             }
         ) { innerPadding ->
