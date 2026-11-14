@@ -1,9 +1,13 @@
 package com.outlandishomar.acta.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -13,7 +17,8 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import com.outlandishomar.acta.data.AppIconManager
 import com.outlandishomar.acta.data.AppSettings
 import com.outlandishomar.acta.data.saveFirstDayOfWeek
@@ -39,6 +44,75 @@ import com.outlandishomar.acta.ui.theme.*
 
 import com.outlandishomar.acta.ui.viewmodel.TaskViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+
+@Composable
+private fun ProfilePillCard(
+    userName: String,
+    formattedBirthday: String?,
+    onClick: () -> Unit
+) {
+    val hasProfile = userName.isNotEmpty() || formattedBirthday != null
+    val titleText = if (userName.isNotEmpty()) userName else "Profile"
+
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        color = Grey50,
+        border = BorderStroke(1.dp, Divider.copy(alpha = 0.5f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = titleText,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (hasProfile && formattedBirthday != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = formattedBirthday,
+                        fontSize = 14.sp,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(Grey100),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = "Open Profile",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,23 +209,15 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            val profileSubtext = remember(AppSettings.userName, AppSettings.userBirthday) {
-                val namePart = AppSettings.userName.trim()
-                val datePart = AppSettings.userBirthday?.format(
+            val formattedBirthday = remember(AppSettings.userBirthday) {
+                AppSettings.userBirthday?.format(
                     DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
                 )
-                when {
-                    namePart.isNotEmpty() && datePart != null -> "$namePart • $datePart"
-                    namePart.isNotEmpty() -> namePart
-                    datePart != null -> datePart
-                    else -> "Set your name & birthday"
-                }
             }
 
-            SettingsItem(
-                icon = Icons.Outlined.Person,
-                title = "Profile",
-                subtext = profileSubtext,
+            ProfilePillCard(
+                userName = AppSettings.userName.trim(),
+                formattedBirthday = formattedBirthday,
                 onClick = { showProfileScreen = true }
             )
 

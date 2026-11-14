@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import android.content.ClipDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -445,7 +446,9 @@ fun HomeScreen(viewModel: TaskViewModel, openTaskId: Int = -1, onTaskOpened: () 
                     ) {
                         TaskTopBar(
                             selectedDate = selectedDate,
-                            onCalendarClick = { showDatePicker = true }
+                            onCalendarClick = { showDatePicker = true },
+                            titleText = "Hi, ${AppSettings.userName.trim().ifEmpty { "User" }}",
+                            isTitleClickable = false
                         )
                         CalendarStrip(
                             selectedDate = selectedDate,
@@ -881,9 +884,11 @@ fun HomeScreen(viewModel: TaskViewModel, openTaskId: Int = -1, onTaskOpened: () 
 @Composable
 fun TaskTopBar(
     selectedDate: LocalDate,
-    onCalendarClick: () -> Unit
+    onCalendarClick: () -> Unit,
+    titleText: String? = null,
+    isTitleClickable: Boolean = true
 ) {
-    val title = selectedDate.format(
+    val title = titleText ?: selectedDate.format(
         DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
     )
 
@@ -900,13 +905,23 @@ fun TaskTopBar(
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = TextPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             style = androidx.compose.ui.text.TextStyle(
                 platformStyle = androidx.compose.ui.text.PlatformTextStyle(
                     includeFontPadding = false
                 )
             ),
             fontFamily = InterDisplay,
-            modifier = Modifier.appleClickable(onCalendarClick)
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (isTitleClickable) {
+                        Modifier.appleClickable(onCalendarClick)
+                    } else {
+                        Modifier
+                    }
+                )
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
