@@ -64,7 +64,10 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.graphics.graphicsLayer
 import android.content.ClipDescription
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -907,29 +910,53 @@ fun TaskTopBar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        androidx.compose.material3.Text(
-            text = title,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = androidx.compose.ui.text.TextStyle(
-                platformStyle = androidx.compose.ui.text.PlatformTextStyle(
-                    includeFontPadding = false
-                )
-            ),
-            fontFamily = InterDisplay,
+        val textMeasurer = rememberTextMeasurer()
+
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
+                .padding(end = 8.dp)
                 .then(
                     if (isTitleClickable) {
                         Modifier.appleClickable(onCalendarClick)
                     } else {
                         Modifier
                     }
-                )
-        )
+                ),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            val maxWidthPx = constraints.maxWidth
+            val baseStyle = TextStyle(
+                fontWeight = FontWeight.Bold,
+                fontFamily = InterDisplay,
+                color = TextPrimary,
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
+            )
+
+            val fittedFontSize = remember(title, maxWidthPx) {
+                if (maxWidthPx <= 0) 28.sp
+                else {
+                    val candidates = (28 downTo 14).map { it.sp }
+                    candidates.firstOrNull { size ->
+                        textMeasurer.measure(
+                            text = title,
+                            style = baseStyle.copy(fontSize = size),
+                            maxLines = 1,
+                            softWrap = false
+                        ).size.width <= maxWidthPx
+                    } ?: 14.sp
+                }
+            }
+
+            androidx.compose.material3.Text(
+                text = title,
+                fontSize = fittedFontSize,
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = baseStyle
+            )
+        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(0.dp)

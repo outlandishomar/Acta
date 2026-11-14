@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -208,9 +209,11 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
             }
         }
 
-        if (!isInSettingsSubScreen) {
-            BirthdayConfettiOverlay(triggerKey = birthdayConfettiKey)
-        }
+        BirthdayConfettiOverlay(
+            triggerKey = birthdayConfettiKey,
+            onFinished = { birthdayConfettiKey = 0 },
+            modifier = if (isInSettingsSubScreen) Modifier.alpha(0f) else Modifier
+        )
     }
 
     if (showTaskAddDialog) {
