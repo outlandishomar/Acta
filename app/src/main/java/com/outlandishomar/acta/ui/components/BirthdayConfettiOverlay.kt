@@ -30,7 +30,6 @@ private class ConfettiParticle(
     val vx: Float,
     val vy: Float,
     val gravity: Float,
-    val drag: Float,
     val sizePx: Float,
     val color: Color,
     val shape: ConfettiShape,
@@ -38,11 +37,8 @@ private class ConfettiParticle(
     val rotationSpeed: Float,
     val tumbleSpeed: Float,
     val spawnDelayMs: Float,
-    val timeToLiveMs: Float,
-    val fadeDurationMs: Float
-) {
-    val totalLifeMs: Float get() = timeToLiveMs + fadeDurationMs
-}
+    val lifeMs: Float
+)
 
 /**
  * Birday-inspired confetti stream overlay raining from the top edge using the 4 vector shapes
@@ -72,10 +68,11 @@ fun BirthdayConfettiOverlay(
         val widthPx = with(density) { maxWidth.toPx() }
         val heightPx = with(density) { maxHeight.toPx() }
 
-        val particles = remember(triggerKey, widthPx, palette) {
+        val particles = remember(triggerKey, widthPx, heightPx, palette) {
             if (widthPx <= 0f || heightPx <= 0f) emptyList()
             else createBirdayParticles(
                 widthPx = widthPx,
+                heightPx = heightPx,
                 sizeOptionsPx = listOf(
                     with(density) { 8.dp.toPx() },
                     with(density) { 12.dp.toPx() },
@@ -91,7 +88,7 @@ fun BirthdayConfettiOverlay(
         LaunchedEffect(triggerKey, particles) {
             if (particles.isEmpty()) return@LaunchedEffect
             elapsedMs = 0f
-            val totalDurationMs = particles.maxOf { it.spawnDelayMs + it.totalLifeMs }
+            val totalDurationMs = particles.maxOf { it.spawnDelayMs + it.lifeMs }
             var startNanos = -1L
             while (elapsedMs < totalDurationMs) {
                 withFrameNanos { frameNanos ->
@@ -106,23 +103,20 @@ fun BirthdayConfettiOverlay(
             val nowMs = elapsedMs
             for (particle in particles) {
                 val ageMs = nowMs - particle.spawnDelayMs
-                if (ageMs < 0f || ageMs > particle.totalLifeMs) continue
+                if (ageMs < 0f || ageMs > particle.lifeMs) continue
 
                 val tSec = ageMs / 1000f
-                // Exponential air drag on initial burst velocity + gentle Konfetti gravity
-                val dragFactor = if (particle.drag > 0f) {
-                    (1f - kotlin.math.exp(-particle.drag * tSec)) / particle.drag
-                } else tSec
-                val x = particle.startX + particle.vx * dragFactor
-                val y = particle.startY + particle.vy * dragFactor + 0.5f * particle.gravity * tSec * tSec
+                val progress = (ageMs / particle.lifeMs).coerceIn(0f, 1f)
+                val x = particle.startX + particle.vx * tSec
+                val y = particle.startY + particle.vy * tSec + 0.5f * particle.gravity * tSec * tSec
 
                 if (y > size.height + particle.sizePx * 2f) continue
 
-                // Konfetti behavior: full opacity during timeToLive (2000ms), then fade out smoothly
-                val alpha = if (ageMs <= particle.timeToLiveMs) {
-                    1f
+                // Smooth fade out across the final 35% of particle lifetime
+                val alpha = if (progress > 0.65f) {
+                    (1f - (progress - 0.65f) / 0.35f).coerceIn(0f, 1f)
                 } else {
-                    (1f - (ageMs - particle.timeToLiveMs) / particle.fadeDurationMs).coerceIn(0f, 1f)
+                    1f
                 }
 
                 val rotation = particle.initialRotation + particle.rotationSpeed * tSec
@@ -146,6 +140,7 @@ fun BirthdayConfettiOverlay(
 
 private fun createBirdayParticles(
     widthPx: Float,
+    heightPx: Float,
     sizeOptionsPx: List<Float>,
     driftScalePx: Float,
     colors: List<Color>
@@ -155,35 +150,31 @@ private fun createBirdayParticles(
     val emitterDurationMs = 2000f
     val random = Random(System.nanoTime())
 
-    // Matches Birday's DisplayUtils.streamBirdayConfetti:
-    // setDirection(0.0, 359.0), setSpeed(0.5f, 4f), setTimeToLive(2000L), setFadeOutEnabled(true), streamFor(200, 2000L)
     return List(count) { index ->
         val angleRad = random.nextDouble(0.0, Math.PI * 2.0)
-        val konfettiSpeed = 0.5f + random.nextFloat() * 3.5f
-        val launchSpeedPx = konfettiSpeed * 32f * driftScalePx
-        val vx = (cos(angleRad) * launchSpeedPx).toFloat()
-        val vy = (sin(angleRad) * launchSpeedPx).toFloat()
-        val gravity = (115f + random.nextFloat() * 45f) * driftScalePx
-        val extraMargin = 20f * driftScalePx
+        val initialSpeed = random.nextFloat() * 110f * driftScalePx + 20f * driftScalePx
+        val vx = (cos(angleRad) * initialSpeed).toFloat()
+        val vy = (sin(angleRad) * initialSpeed * 0.45f).toFloat() + random.nextFloat() * 140f * driftScalePx + 120f * driftScalePx
+        val gravity = random.nextFloat() * 140f * driftScalePx + 240f * driftScalePx
+        val extraMargin = 40f * driftScalePx
         val spawnX = -extraMargin + random.nextFloat() * (widthPx + extraMargin * 2f)
-        val spawnDelay = (index.toFloat() / count) * emitterDurationMs + random.nextFloat() * 30f
+        val spawnDelay = (index.toFloat() / count) * emitterDurationMs + random.nextFloat() * 40f
+        val lifeMs = ((heightPx / (320f * driftScalePx)).coerceIn(1.8f, 3.2f) * 1000f) + random.nextFloat() * 500f
 
         ConfettiParticle(
             startX = spawnX,
-            startY = -18f * driftScalePx,
+            startY = -24f * driftScalePx,
             vx = vx,
             vy = vy,
             gravity = gravity,
-            drag = 1.6f,
             sizePx = sizeOptionsPx[random.nextInt(sizeOptionsPx.size)],
             color = colors[random.nextInt(colors.size)],
             shape = shapes[random.nextInt(shapes.size)],
             initialRotation = random.nextFloat() * 360f,
-            rotationSpeed = (random.nextFloat() - 0.5f) * 240f,
-            tumbleSpeed = random.nextFloat() * 5f + 2f,
+            rotationSpeed = (random.nextFloat() - 0.5f) * 320f,
+            tumbleSpeed = random.nextFloat() * 6f + 2f,
             spawnDelayMs = spawnDelay,
-            timeToLiveMs = 2000f,
-            fadeDurationMs = 750f
+            lifeMs = lifeMs
         )
     }
 }
