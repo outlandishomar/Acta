@@ -187,6 +187,15 @@ fun ProfileScreen(onBackClick: () -> Unit) {
                     )
                 }
 
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "Remember Acta does not collect any of your data, the app runs completely offline so don't worry about it.\nThe app uses your name to display it on the home screen as a way of greeting to improve your experience and feel more connected to help you be more productive which is our goal, and it uses your birthday to celebrate it and you can preview that by tapping on the \"Preview Celebration\" button.",
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp,
+                    color = TextSecondary.copy(alpha = 0.8f)
+                )
+
                 Spacer(modifier = Modifier.height(24.dp))
             }
         }
