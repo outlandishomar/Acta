@@ -72,6 +72,7 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
 
     var isInSettingsSubScreen by remember { mutableStateOf(false) }
+    var openProfileRequested by remember { mutableStateOf(false) }
 
     var showTaskAddDialog by remember { mutableStateOf(false) }
     var showTaskAddHighlightedDialog by remember { mutableStateOf(false) }
@@ -162,7 +163,11 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                     BottomTab.Tasks -> HomeScreen(
                         viewModel = viewModel,
                         openTaskId = openTaskId,
-                        onTaskOpened = onTaskOpened
+                        onTaskOpened = onTaskOpened,
+                        onProfileClick = {
+                            openProfileRequested = true
+                            selectedTab = BottomTab.Settings
+                        }
                     )
                     BottomTab.Inbox -> InboxScreen(
                         viewModel = viewModel,
@@ -170,6 +175,8 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                     )
                     BottomTab.Settings -> SettingsScreen(
                         onSubScreenChanged = { isInSettingsSubScreen = it },
+                        openProfileRequested = openProfileRequested,
+                        onProfileOpened = { openProfileRequested = false },
                         viewModel = viewModel
                     )
                 }

@@ -100,7 +100,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(viewModel: TaskViewModel, openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
+fun HomeScreen(
+    viewModel: TaskViewModel,
+    openTaskId: Int = -1,
+    onTaskOpened: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
+) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val dayTasksState by viewModel.dayTasksState.collectAsStateWithLifecycle()
     val subTasksMap = dayTasksState.subTasksMap
@@ -458,7 +463,7 @@ fun HomeScreen(viewModel: TaskViewModel, openTaskId: Int = -1, onTaskOpened: () 
                             selectedDate = selectedDate,
                             onCalendarClick = { showDatePicker = true },
                             titleText = greetingTitle,
-                            isTitleClickable = false
+                            onTitleClick = onProfileClick
                         )
                         CalendarStrip(
                             selectedDate = selectedDate,
@@ -896,7 +901,7 @@ fun TaskTopBar(
     selectedDate: LocalDate,
     onCalendarClick: () -> Unit,
     titleText: String? = null,
-    isTitleClickable: Boolean = true
+    onTitleClick: (() -> Unit)? = onCalendarClick
 ) {
     val title = titleText ?: selectedDate.format(
         DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -917,8 +922,8 @@ fun TaskTopBar(
                 .weight(1f)
                 .padding(end = 8.dp)
                 .then(
-                    if (isTitleClickable) {
-                        Modifier.appleClickable(onCalendarClick)
+                    if (onTitleClick != null) {
+                        Modifier.appleClickable(onTitleClick)
                     } else {
                         Modifier
                     }

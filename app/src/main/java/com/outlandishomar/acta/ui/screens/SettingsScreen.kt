@@ -119,6 +119,8 @@ private fun ProfilePillCard(
 @Composable
 fun SettingsScreen(
     onSubScreenChanged: (Boolean) -> Unit = {},
+    openProfileRequested: Boolean = false,
+    onProfileOpened: () -> Unit = {},
     viewModel: TaskViewModel = viewModel()
 ) {
     var showProfileScreen by remember { mutableStateOf(false) }
@@ -128,6 +130,13 @@ fun SettingsScreen(
     var showBackupScreen by remember { mutableStateOf(false) }
     var showLockScreenSettings by remember { mutableStateOf(false) }
     var showHideTasksSettings by remember { mutableStateOf(false) }
+
+    LaunchedEffect(openProfileRequested) {
+        if (openProfileRequested) {
+            showProfileScreen = true
+            onProfileOpened()
+        }
+    }
 
     val isInSubScreen = showProfileScreen ||
         showAboutAppScreen ||
