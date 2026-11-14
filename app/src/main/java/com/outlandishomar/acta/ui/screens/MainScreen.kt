@@ -17,11 +17,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,6 +43,9 @@ import com.outlandishomar.acta.ui.components.UndoFloatingBar
 import com.outlandishomar.acta.ui.theme.BottomBarBackground
 import com.outlandishomar.acta.ui.theme.Blue500
 import com.outlandishomar.acta.ui.theme.Divider
+import com.outlandishomar.acta.ui.theme.Grey50
+import com.outlandishomar.acta.ui.theme.Grey100
+import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
 import com.outlandishomar.acta.ui.theme.White
 import com.outlandishomar.acta.ui.theme.calculateLuminance
@@ -162,18 +175,58 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                 }
 
                 if (selectedTab != BottomTab.Settings) {
-                    // Floating circular '+' FAB at bottom-right (respects active tab)
-                    val fabContentColor = if (Blue500.calculateLuminance() <= 0.5f) Color.White else Color(0xFF1E1E1E)
+                    // Material You tonal squircle '+' FAB at bottom-right (no border, no glossy sheen)
+                    val fabShape = RoundedCornerShape(16.dp)
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val fabScale by animateFloatAsState(
+                        targetValue = if (isPressed) 0.94f else 1f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        ),
+                        label = "fab_scale"
+                    )
+                    val haptic = LocalHapticFeedback.current
+
+                    val isCustomColorfulAccent = remember(Blue500) {
+                        val maxC = maxOf(Blue500.red, Blue500.green, Blue500.blue)
+                        val minC = minOf(Blue500.red, Blue500.green, Blue500.blue)
+                        (maxC - minC) > 0.12f
+                    }
+
+                    val fabContainerColor = if (isCustomColorfulAccent) {
+                        lerp(White, Blue500, if (isDark) 0.28f else 0.20f)
+                    } else if (isDark) {
+                        lerp(Grey100, TextPrimary, 0.06f)
+                    } else {
+                        lerp(Grey50, Grey100, 0.55f)
+                    }
+
+                    val fabContentColor = if (isCustomColorfulAccent) {
+                        if (isDark) lerp(Blue500, Color.White, 0.55f)
+                        else lerp(Blue500, Color.Black, 0.45f)
+                    } else {
+                        TextPrimary
+                    }
+
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(end = 20.dp, bottom = 18.dp)
-                            .shadow(8.dp, CircleShape, clip = false)
+                            .graphicsLayer {
+                                scaleX = fabScale
+                                scaleY = fabScale
+                            }
+                            .shadow(6.dp, fabShape, clip = false)
                             .size(56.dp)
-                            .clip(CircleShape)
-                            .background(Blue500)
+                            .clip(fabShape)
+                            .background(fabContainerColor)
                             .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = LocalIndication.current,
                                 onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     if (selectedTab == BottomTab.Tasks) {
                                         showTaskAddDialog = true
                                     } else {
@@ -182,6 +235,7 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                                 },
                                 onLongClick = {
                                     if (selectedTab == BottomTab.Tasks) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                         showTaskAddHighlightedDialog = true
                                     }
                                 }
@@ -192,7 +246,7 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                             imageVector = Icons.Filled.Add,
                             contentDescription = if (selectedTab == BottomTab.Tasks) "Add task" else "Add inbox task",
                             tint = fabContentColor,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
