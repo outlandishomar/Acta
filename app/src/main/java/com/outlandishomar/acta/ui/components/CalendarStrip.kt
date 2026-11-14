@@ -33,9 +33,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.outlandishomar.acta.ui.theme.Blue500
-import com.outlandishomar.acta.ui.theme.Divider
 import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
+import com.outlandishomar.acta.ui.theme.TopBarBackground
 import com.outlandishomar.acta.ui.theme.White
 import com.outlandishomar.acta.ui.theme.InterText
 import com.outlandishomar.acta.ui.theme.calculateLuminance
@@ -105,8 +105,8 @@ fun CalendarStrip(
     var isExpanded by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
-        // Vertical drag gesture area wraps the animated content
-        Box(
+        // Vertical drag gesture area wraps the animated calendar and its grip handle
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .pointerInput(Unit) {
@@ -125,7 +125,8 @@ fun CalendarStrip(
                             totalDrag += dragAmount
                         }
                     )
-                }
+                },
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             AnimatedContent(
                 targetState = isExpanded,
@@ -168,15 +169,29 @@ fun CalendarStrip(
                     )
                 }
             }
+
+            // Functional Grip Accent: signals week <-> month pull-down expansion
+            val isDarkTopBar = TopBarBackground.calculateLuminance() < 0.35f
+            Box(
+                modifier = Modifier
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { isExpanded = !isExpanded }
+                    .padding(top = 0.dp, bottom = 5.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(36.dp)
+                        .height(3.5.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(TextSecondary.copy(alpha = if (isDarkTopBar) 0.38f else 0.28f))
+                )
+            }
         }
 
-        // Bottom divider
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(0.5.dp)
-                .background(Divider)
-        )
+        // Soft bottom fade handled by parent below TopBarBackground
     }
 }
 
@@ -406,7 +421,13 @@ private fun DayCell(
     hasTasks: Boolean,
     onClick: () -> Unit
 ) {
-    val selectedTextColor = if (Blue500.calculateLuminance() <= 0.5f) Color.White else Color(0xFF1E1E1E)
+    val isDarkSurface = TopBarBackground.calculateLuminance() < 0.35f
+    val selectedBgColor = if (isDarkSurface) Blue500.copy(alpha = 0.20f) else Blue500
+    val selectedTextColor = when {
+        isDarkSurface -> TextPrimary
+        Blue500.calculateLuminance() <= 0.5f -> Color.White
+        else -> Color(0xFF1E1E1E)
+    }
     val targetColor = when {
         !isCurrentMonth -> TextSecondary.copy(alpha = 0.35f)
         isSelected -> selectedTextColor
@@ -454,7 +475,7 @@ private fun DayCell(
                         when {
                             isSelected -> Modifier
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Blue500)
+                                .background(selectedBgColor)
                             isToday -> Modifier
                                 .clip(RoundedCornerShape(10.dp))
                                 .border(1.5.dp, TextPrimary.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
@@ -501,7 +522,7 @@ private fun DayCell(
                         when {
                             isSelected && isCurrentMonth -> Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Blue500)
+                                .background(selectedBgColor)
                             isToday && isCurrentMonth -> Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .border(1.5.dp, TextPrimary.copy(alpha = 0.3f), RoundedCornerShape(8.dp))

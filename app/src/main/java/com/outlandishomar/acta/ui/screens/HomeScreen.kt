@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
@@ -94,7 +95,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
+fun HomeScreen(viewModel: TaskViewModel, openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val dayTasksState by viewModel.dayTasksState.collectAsStateWithLifecycle()
     val subTasksMap = dayTasksState.subTasksMap
@@ -435,20 +436,33 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
         Scaffold(
             containerColor = White,
             topBar = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(TopBarBackground)
-                ) {
-                    TaskTopBar(
-                        selectedDate = selectedDate,
-                        onCalendarClick = { showDatePicker = true },
-                        onSettingsClick = onSettingsClick
-                    )
-                    CalendarStrip(
-                        selectedDate = selectedDate,
-                        onDateSelected = viewModel::selectDate,
-                        hasTasks = hasTasks
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(TopBarBackground)
+                            .statusBarsPadding()
+                    ) {
+                        TaskTopBar(
+                            selectedDate = selectedDate,
+                            onCalendarClick = { showDatePicker = true }
+                        )
+                        CalendarStrip(
+                            selectedDate = selectedDate,
+                            onDateSelected = viewModel::selectDate,
+                            hasTasks = hasTasks
+                        )
+                    }
+                    // Option 1: Soft gradient transition between top bar and task surface
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(16.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(TopBarBackground, White)
+                                )
+                            )
                     )
                 }
             },
@@ -867,8 +881,7 @@ fun HomeScreen(viewModel: TaskViewModel, onSettingsClick: () -> Unit, openTaskId
 @Composable
 fun TaskTopBar(
     selectedDate: LocalDate,
-    onCalendarClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onCalendarClick: () -> Unit
 ) {
     val title = selectedDate.format(
         DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
@@ -908,14 +921,6 @@ fun TaskTopBar(
                     modifier = Modifier.size(24.dp)
                 )
             }
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    painter = painterResource(id = if (isDark) com.outlandishomar.acta.R.drawable.settingswhite else com.outlandishomar.acta.R.drawable.settingsblack),
-                    contentDescription = "Settings",
-                    tint = Color.Unspecified,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
         }
     }
 }
@@ -925,7 +930,7 @@ private fun SectionHeader(
     selectedDate: LocalDate,
     allDone: Boolean
 ) {
-    HorizontalDivider(color = Divider, thickness = 0.5.dp)
+    Spacer(Modifier.height(4.dp))
 }
 
 @Composable

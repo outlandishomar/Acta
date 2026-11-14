@@ -46,7 +46,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 @Composable
 fun InboxScreen(
     viewModel: TaskViewModel,
-    onSettingsClick: () -> Unit,
     onAddInboxTaskClick: () -> Unit = {}
 ) {
     val inboxTasks by viewModel.inboxTasks.collectAsStateWithLifecycle()
@@ -114,17 +113,17 @@ fun InboxScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
-            containerColor = White,
+            containerColor = TopBarBackground,
             topBar = {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(TopBarBackground)
+                        .statusBarsPadding()
                 ) {
                     TaskTopBar(
                         selectedDate = selectedDate,
-                        onCalendarClick = { showDatePicker = true },
-                        onSettingsClick = onSettingsClick
+                        onCalendarClick = { showDatePicker = true }
                     )
                 }
             },
@@ -157,7 +156,6 @@ fun InboxScreen(
                         color = TextSecondary
                     )
                 }
-                HorizontalDivider(color = Divider, thickness = 0.5.dp)
 
                 if (displayTasks.isEmpty()) {
                     Box(
@@ -251,7 +249,8 @@ fun InboxScreen(
                                         onDelete = viewModel::deleteTask,
                                         subTasks = inboxSubTasksMap[task.id] ?: emptyList(),
                                         onToggleSubTask = viewModel::toggleSubTaskComplete,
-                                        onTaskClick = { taskForActionSheet = it }
+                                        onTaskClick = { taskForActionSheet = it },
+                                        containerColor = TopBarBackground
                                     )
                                 }
                             }

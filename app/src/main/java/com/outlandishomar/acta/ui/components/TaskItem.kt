@@ -67,6 +67,7 @@ fun TaskItem(
     subTasks: List<SubTask> = emptyList(),
     onToggleSubTask: (SubTask) -> Unit = {},
     onTaskClick: (Task) -> Unit = {},
+    containerColor: Color = White,
     modifier: Modifier = Modifier
 ) {
     TaskItemContent(
@@ -75,6 +76,7 @@ fun TaskItem(
         subTasks = subTasks,
         onToggleSubTask = onToggleSubTask,
         onTaskClick = onTaskClick,
+        containerColor = containerColor,
         modifier = modifier
     )
 }
@@ -86,6 +88,7 @@ private fun TaskItemContent(
     subTasks: List<SubTask>,
     onToggleSubTask: (SubTask) -> Unit,
     onTaskClick: (Task) -> Unit,
+    containerColor: Color = White,
     modifier: Modifier = Modifier
 ) {
     // Animated strikethrough progress
@@ -138,7 +141,7 @@ private fun TaskItemContent(
     }
 
     Surface(
-        color = White,
+        color = containerColor,
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer {
@@ -157,7 +160,7 @@ private fun TaskItemContent(
                     .onSizeChanged { size ->
                         mainRowHeightPx = size.height.toFloat()
                     }
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
+                    .padding(horizontal = 16.dp, vertical = 15.dp)
             ) {
                 // Blue checkbox circle aligned to top to look neat with multiline notes
                 Box(modifier = if (hasNotes) Modifier.padding(top = 2.dp) else Modifier) {
@@ -355,13 +358,6 @@ private fun TaskItemContent(
                     }
                 }
             }
-
-            // Bottom divider
-            HorizontalDivider(
-                modifier = Modifier.padding(start = 54.dp, end = 16.dp),
-                color = Divider,
-                thickness = 0.5.dp
-            )
         }
     }
 }

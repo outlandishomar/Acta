@@ -128,20 +128,20 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
         else -> {
             if (isDark) {
                 Blue500        = Color(0xFFE0E0E0)
-                Blue100        = Color(0xFF505052)
+                Blue100        = Color(0xFF454548)
                 Blue50         = Color(0xFF2C2C2E)
-                White          = Color(0xFF38383A)
-                Grey50         = Color(0xFF48484A)
-                Grey100        = Color(0xFF48484A)
-                TextPrimary    = Color(0xFFFFFFFF)
-                TextSecondary  = Color(0xFFAAAAAA)
+                White          = Color(0xFF343436)
+                Grey50         = Color(0xFF404043)
+                Grey100        = Color(0xFF444447)
+                TextPrimary    = Color(0xFFF2F2F7)
+                TextSecondary  = Color(0xFFAEAEB2)
                 TextDisabled   = Color(0xFF757575)
-                Divider        = Color(0xFF48484A)
+                Divider        = Color(0xFF454548)
                 Completed      = Color(0xFF757575)
-                AvatarGrey     = Color(0xFF48484A)
+                AvatarGrey     = Color(0xFF444447)
                 Red500         = Color(0xFFE63946)
-                TopBarBackground    = White
-                BottomBarBackground = White
+                TopBarBackground    = Color(0xFF1C1C1E)
+                BottomBarBackground = Color(0xFF4D4D4D)
             } else {
                 Blue500        = Color(0xFF212121)
                 White          = Color(0xFFEEE2DF)

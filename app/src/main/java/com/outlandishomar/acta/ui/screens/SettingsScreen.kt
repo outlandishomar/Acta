@@ -3,8 +3,9 @@ package com.outlandishomar.acta.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
@@ -12,10 +13,12 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.outlined.Person
 import com.outlandishomar.acta.data.AppIconManager
 import com.outlandishomar.acta.data.AppSettings
 import com.outlandishomar.acta.data.saveFirstDayOfWeek
 import java.time.DayOfWeek
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import androidx.compose.material3.*
@@ -39,13 +42,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel()) {
+fun SettingsScreen(
+    onSubScreenChanged: (Boolean) -> Unit = {},
+    viewModel: TaskViewModel = viewModel()
+) {
+    var showProfileScreen by remember { mutableStateOf(false) }
     var showThemeScreen by remember { mutableStateOf(false) }
     var showAboutAppScreen by remember { mutableStateOf(false) }
     var showStartDayDialog by remember { mutableStateOf(false) }
     var showBackupScreen by remember { mutableStateOf(false) }
     var showLockScreenSettings by remember { mutableStateOf(false) }
     var showHideTasksSettings by remember { mutableStateOf(false) }
+
+    val isInSubScreen = showProfileScreen ||
+        showAboutAppScreen ||
+        showBackupScreen ||
+        showThemeScreen ||
+        showLockScreenSettings ||
+        showHideTasksSettings
+
+    LaunchedEffect(isInSubScreen) {
+        onSubScreenChanged(isInSubScreen)
+    }
+    DisposableEffect(Unit) {
+        onDispose { onSubScreenChanged(false) }
+    }
     
     val context = LocalContext.current
     
@@ -62,7 +83,10 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
 
     val isDark = ThemeState.isThemeDark
 
-    if (showAboutAppScreen) {
+    if (showProfileScreen) {
+        androidx.activity.compose.BackHandler { showProfileScreen = false }
+        ProfileScreen(onBackClick = { showProfileScreen = false })
+    } else if (showAboutAppScreen) {
         androidx.activity.compose.BackHandler { showAboutAppScreen = false }
         AboutAppScreen(onBackClick = { showAboutAppScreen = false })
     } else if (showBackupScreen) {
@@ -88,23 +112,18 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
     } else {
         Scaffold(
             containerColor = White,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
-                TopAppBar(
+                CenterAlignedTopAppBar(
                     title = {
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Text("Settings", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        }
+                        Text(
+                            text = "Settings",
+                            color = TextPrimary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                        }
-                    },
-                    actions = {
-                        // Empty spacer to balance the navigation icon and perfectly center the title
-                        Spacer(modifier = Modifier.width(48.dp))
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = White)
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = White)
                 )
             }
         ) { innerPadding ->
@@ -112,8 +131,29 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            val profileSubtext = remember(AppSettings.userName, AppSettings.userBirthday) {
+                val namePart = AppSettings.userName.trim()
+                val datePart = AppSettings.userBirthday?.format(
+                    DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+                )
+                when {
+                    namePart.isNotEmpty() && datePart != null -> "$namePart • $datePart"
+                    namePart.isNotEmpty() -> namePart
+                    datePart != null -> datePart
+                    else -> "Set your name & birthday"
+                }
+            }
+
+            SettingsItem(
+                icon = Icons.Outlined.Person,
+                title = "Profile",
+                subtext = profileSubtext,
+                onClick = { showProfileScreen = true }
+            )
 
             val currentDayName = AppSettings.firstDayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
 
@@ -123,8 +163,6 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
                 subtext = "$themeSubtext • ${AppIconManager.currentIcon.displayName}",
                 onClick = { showThemeScreen = true }
             )
-            
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp, end = 16.dp), color = Divider, thickness = 0.5.dp)
 
             SettingsItem(
                 icon = if (isDark) R.drawable.scheduelwhite else R.drawable.schedueldark,
@@ -132,8 +170,6 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
                 subtext = currentDayName,
                 onClick = { showStartDayDialog = true }
             )
-            
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp, end = 16.dp), color = Divider, thickness = 0.5.dp)
 
             val hideSubtext = if (AppSettings.isHideAllTasksEnabled) "All tasks hidden"
                 else if (AppSettings.isHideRegularTasksEnabled) "Regular tasks hidden"
@@ -148,8 +184,6 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
                 onClick = { showHideTasksSettings = true }
             )
 
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp, end = 16.dp), color = Divider, thickness = 0.5.dp)
-
             val lockSubtext = if (AppSettings.isLockScreenEnabled || AppSettings.isDevicePasscodeEnabled) "Enabled" else "Disabled"
 
             SettingsItem(
@@ -159,16 +193,12 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
                 onClick = { showLockScreenSettings = true }
             )
 
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp, end = 16.dp), color = Divider, thickness = 0.5.dp)
-
             SettingsItem(
                 icon = if (isDark) R.drawable.fileswhite else R.drawable.filesdark,
                 title = "Backup",
                 subtext = "Export or import data",
                 onClick = { showBackupScreen = true }
             )
-            
-            HorizontalDivider(modifier = Modifier.padding(start = 64.dp, end = 16.dp), color = Divider, thickness = 0.5.dp)
 
             SettingsItem(
                 icon = Icons.Filled.Info,
@@ -176,6 +206,8 @@ fun SettingsScreen(onBackClick: () -> Unit, viewModel: TaskViewModel = viewModel
                 subtext = "App info",
                 onClick = { showAboutAppScreen = true }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

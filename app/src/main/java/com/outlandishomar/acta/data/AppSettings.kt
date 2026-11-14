@@ -5,10 +5,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 object AppSettings {
     // Default to Monday
     var firstDayOfWeek by mutableStateOf(DayOfWeek.MONDAY)
+
+    // User Profile State
+    var userName by mutableStateOf("")
+    var userBirthday by mutableStateOf<LocalDate?>(null)
     
     // Pro Plan State - All features unlocked for everyone
     var isPro by mutableStateOf(true)
@@ -106,6 +111,29 @@ fun applyAppSettings(context: Context) {
     AppSettings.isHideRegularTasksEnabled = hideRegular
     AppSettings.isHideTodayTasksEnabled = hideToday
     AppSettings.isHideInboxTasksEnabled = hideInbox
+
+    AppSettings.userName = prefs.getString("user_name", "") ?: ""
+    AppSettings.userBirthday = prefs.getString("user_birthday", null)
+        ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+}
+
+fun saveUserProfile(context: Context, name: String, birthday: LocalDate?) {
+    val trimmedName = name.trim()
+    val editor = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE).edit()
+    editor.putString("user_name", trimmedName)
+    if (birthday != null) {
+        editor.putString("user_birthday", birthday.toString())
+    } else {
+        editor.remove("user_birthday")
+    }
+    editor.apply()
+    AppSettings.userName = trimmedName
+    AppSettings.userBirthday = birthday
+}
+
+fun isTodayUserBirthday(today: LocalDate = LocalDate.now()): Boolean {
+    val birthday = AppSettings.userBirthday ?: return false
+    return birthday.monthValue == today.monthValue && birthday.dayOfMonth == today.dayOfMonth
 }
 
 fun saveFirstDayOfWeek(context: Context, day: DayOfWeek) {
