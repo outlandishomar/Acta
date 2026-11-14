@@ -63,8 +63,8 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFF8A6E6C)
             Divider        = Color(0xFF1E1E1E).copy(alpha = 0.2f)
             Completed      = Color(0xFF8A6E6C)
-            TopBarBackground    = Color(0xFFC89F9C)
-            BottomBarBackground = Color(0xFFC89F9C)
+            TopBarBackground    = Color(0xFFB58A87)
+            BottomBarBackground = Color(0xFFD9B6B3)
             isDark = false
         }
         "DUST_GREY" -> {
@@ -79,8 +79,8 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             Completed      = Color(0xFFBDBDBD)
             AvatarGrey     = Color(0xFFE0E0E0)
             Red500         = Color(0xFFE63946)
-            TopBarBackground    = Color(0xFFD1D1D1)
-            BottomBarBackground = Color(0xFFD1D1D1)
+            TopBarBackground    = Color(0xFFBEBEBE)
+            BottomBarBackground = Color(0xFFE4E4E6)
             isDark = false
         }
         "SILVER" -> {
@@ -93,8 +93,8 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFF7C8589)
             Divider        = Color(0xFF212121).copy(alpha = 0.2f)
             Completed      = Color(0xFF7C8589)
-            TopBarBackground    = Color(0xFFB0BBBF)
-            BottomBarBackground = Color(0xFFB0BBBF)
+            TopBarBackground    = Color(0xFF9CA8AC)
+            BottomBarBackground = Color(0xFFC5CFD2)
             isDark = false
         }
         "ASH_GREY" -> {
@@ -107,8 +107,8 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFF75786E)
             Divider        = Color(0xFF212121).copy(alpha = 0.2f)
             Completed      = Color(0xFF75786E)
-            TopBarBackground    = Color(0xFFA1A499)
-            BottomBarBackground = Color(0xFFA1A499)
+            TopBarBackground    = Color(0xFF8E9186)
+            BottomBarBackground = Color(0xFFB5B8AE)
             isDark = false
         }
         "SEASHELL" -> {
@@ -121,8 +121,8 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFFA09694)
             Divider        = Color(0xFF212121).copy(alpha = 0.2f)
             Completed      = Color(0xFFA09694)
-            TopBarBackground    = Color(0xFFEEE2DF)
-            BottomBarBackground = Color(0xFFEEE2DF)
+            TopBarBackground    = Color(0xFFDDD0CC)
+            BottomBarBackground = Color(0xFFF8F1EF)
             isDark = false
         }
         else -> {
@@ -152,8 +152,8 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
                 TextDisabled   = Color(0xFFA09694)
                 Divider        = Color(0xFF212121).copy(alpha = 0.2f)
                 Completed      = Color(0xFFA09694)
-                TopBarBackground    = Color(0xFFEEE2DF)
-                BottomBarBackground = Color(0xFFEEE2DF)
+                TopBarBackground    = Color(0xFFDDD0CC)
+                BottomBarBackground = Color(0xFFF8F1EF)
             }
         }
     }

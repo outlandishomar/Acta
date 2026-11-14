@@ -373,7 +373,7 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "v2.1",
+                                text = "v2.2",
                                 fontSize = 11.5.sp,
                                 color = TextSecondary.copy(alpha = 0.6f)
                             )
@@ -392,7 +392,7 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "v2.1.1",
+                                text = "v2.2",
                                 fontSize = 11.5.sp,
                                 color = TextSecondary.copy(alpha = 0.6f)
                             )

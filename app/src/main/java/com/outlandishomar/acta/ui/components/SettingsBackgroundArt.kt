@@ -28,6 +28,8 @@ import com.outlandishomar.acta.ui.theme.Blue500
 import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
 import com.outlandishomar.acta.ui.theme.ThemeState
+import com.outlandishomar.acta.ui.theme.TopBarBackground
+import com.outlandishomar.acta.ui.theme.calculateLuminance
 
 private val SETTINGS_BACKGROUND_ARTS = listOf(
     R.string.ascii_coolstars,
@@ -83,11 +85,12 @@ fun SettingsBackgroundArt(modifier: Modifier = Modifier) {
     val artResId = remember(context) { SessionBackgroundArt.getForSession(context) }
     val artText = stringResource(id = artResId).trim('\n')
     val isDark = ThemeState.isThemeDark
+    val bgLum = TopBarBackground.calculateLuminance()
 
-    val artColor = if (isDark) {
-        lerp(TextSecondary, Blue500, 0.22f).copy(alpha = 0.22f)
-    } else {
-        lerp(TextSecondary, TextPrimary, 0.15f).copy(alpha = 0.13f)
+    val artColor = when {
+        isDark && bgLum < 0.16f -> lerp(TextSecondary, Blue500, 0.22f).copy(alpha = 0.22f)
+        isDark -> TextPrimary.copy(alpha = 0.25f)
+        else -> TextPrimary.copy(alpha = 0.22f)
     }
 
     Box(
