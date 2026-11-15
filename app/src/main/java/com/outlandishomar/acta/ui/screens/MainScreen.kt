@@ -321,13 +321,13 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                         (maxC - minC) > 0.12f
                     }
 
-                    val fabContainerColor = if (isCustomColorfulAccent) {
+                    val fabContainerColor = (if (isCustomColorfulAccent) {
                         lerp(White, Blue500, if (isDark) 0.28f else 0.20f)
                     } else if (isDark) {
                         lerp(Grey100, TextPrimary, 0.06f)
                     } else {
                         lerp(Grey50, Grey100, 0.55f)
-                    }
+                    }).copy(alpha = 1f)
 
                     val fabContentColor = if (isCustomColorfulAccent) {
                         if (isDark) lerp(Blue500, Color.White, 0.55f)

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 var Blue500        by mutableStateOf(Color(0xFF1E1E1E))
 var Blue100        by mutableStateOf(Color(0xFFBBDEFB))
@@ -63,6 +64,7 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFF8A6E6C)
             Divider        = Color(0xFF1E1E1E).copy(alpha = 0.2f)
             Completed      = Color(0xFF8A6E6C)
+            AvatarGrey     = Color(0xFFDFC0BD)
             TopBarBackground    = Color(0xFFB58A87)
             BottomBarBackground = Color(0xFFD9B6B3)
             isDark = false
@@ -93,6 +95,7 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFF7C8589)
             Divider        = Color(0xFF212121).copy(alpha = 0.2f)
             Completed      = Color(0xFF7C8589)
+            AvatarGrey     = Color(0xFFCCD6D9)
             TopBarBackground    = Color(0xFF9CA8AC)
             BottomBarBackground = Color(0xFFC5CFD2)
             isDark = false
@@ -107,6 +110,7 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFF75786E)
             Divider        = Color(0xFF212121).copy(alpha = 0.2f)
             Completed      = Color(0xFF75786E)
+            AvatarGrey     = Color(0xFFBDBFA6)
             TopBarBackground    = Color(0xFF8E9186)
             BottomBarBackground = Color(0xFFB5B8AE)
             isDark = false
@@ -121,6 +125,7 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             TextDisabled   = Color(0xFFA09694)
             Divider        = Color(0xFF212121).copy(alpha = 0.2f)
             Completed      = Color(0xFFA09694)
+            AvatarGrey     = Color(0xFFF8EFEF)
             TopBarBackground    = Color(0xFFDDD0CC)
             BottomBarBackground = Color(0xFFF8F1EF)
             isDark = false
@@ -152,6 +157,7 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
                 TextDisabled   = Color(0xFFA09694)
                 Divider        = Color(0xFF212121).copy(alpha = 0.2f)
                 Completed      = Color(0xFFA09694)
+                AvatarGrey     = Color(0xFFF8EFEF)
                 TopBarBackground    = Color(0xFFDDD0CC)
                 BottomBarBackground = Color(0xFFF8F1EF)
             }
@@ -173,26 +179,29 @@ fun updateThemeColors(context: Context, mode: String, isSystemDark: Boolean) {
             isDark = isCustomDark
 
             if (isCustomDark) {
-                // Dark background custom theme:
+                // Dark background custom theme (opaque tonal surfaces prevent shadow bleed-through):
                 TextPrimary = Color(0xFFFFFFFF)
                 TextSecondary = Color(0xFFAAAAAA)
                 TextDisabled = Color(0xFF757575)
                 Completed = Color(0xFF757575)
                 Divider = Color(0xFFFFFFFF).copy(alpha = 0.15f)
-                Grey100 = Color(0xFFFFFFFF).copy(alpha = 0.12f)
-                Grey50 = Color(0xFFFFFFFF).copy(alpha = 0.07f)
+                Grey50 = lerp(color, Color.White, 0.08f)
+                Grey100 = lerp(color, Color.White, 0.14f)
+                AvatarGrey = lerp(color, Color.White, 0.16f)
                 if (customSecondary.isNullOrBlank()) {
                     Blue500 = Color(0xFFE0E0E0)
                 }
             } else {
-                // Light background custom theme:
+                // Light background custom theme (opaque tonal surfaces prevent shadow bleed-through):
                 TextPrimary = Color(0xFF1E1E1E)
                 TextSecondary = Color(0xFF555555)
                 TextDisabled = Color(0xFF888888)
                 Completed = Color(0xFF888888)
                 Divider = Color(0xFF000000).copy(alpha = 0.15f)
-                Grey100 = Color(0xFF000000).copy(alpha = 0.08f)
-                Grey50 = Color(0xFF000000).copy(alpha = 0.04f)
+                val useDarkTint = bgLuminance > 0.85f
+                Grey50 = if (useDarkTint) lerp(color, Color.Black, 0.05f) else lerp(color, Color.White, 0.28f)
+                Grey100 = if (useDarkTint) lerp(color, Color.Black, 0.09f) else lerp(color, Color.White, 0.20f)
+                AvatarGrey = if (useDarkTint) lerp(color, Color.Black, 0.10f) else lerp(color, Color.White, 0.26f)
                 if (customSecondary.isNullOrBlank()) {
                     Blue500 = Color(0xFF1E1E1E)
                 }
