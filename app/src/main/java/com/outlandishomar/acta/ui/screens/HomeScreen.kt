@@ -777,7 +777,9 @@ fun HomeScreen(
         }
     }
 
-    taskForActionSheet?.let { task ->
+    taskForActionSheet?.let { selectedTask ->
+        val task = (dayTasksState.tasks + dayTasksState.highlightedTasks)
+            .firstOrNull { it.id == selectedTask.id } ?: selectedTask
         TaskActionSheet(
             task = task,
             subTasks = subTasksMap[task.id] ?: emptyList(),
@@ -808,7 +810,9 @@ fun HomeScreen(
         )
     }
 
-    taskForEditDialog?.let { task ->
+    taskForEditDialog?.let { selectedTask ->
+        val task = (dayTasksState.tasks + dayTasksState.highlightedTasks)
+            .firstOrNull { it.id == selectedTask.id } ?: selectedTask
         val existingSubTasks = subTasksMap[task.id]?.map { it.title } ?: emptyList()
         AddTaskDialog(
             initialTitle = task.title,

@@ -171,6 +171,9 @@ fun UnscheduledChipItem(
     modifier: Modifier = Modifier
 ) {
     val haptic = LocalHapticFeedback.current
+    val currentTask by rememberUpdatedState(task)
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnDragStart by rememberUpdatedState(onDragStart)
 
     val hasNotes = remember(task.description) {
         RichTextHelper.parseToRichSpans(task.description).first.isNotBlank()
@@ -218,13 +221,13 @@ fun UnscheduledChipItem(
             .border(0.5.dp, Divider.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
             .dragAndDropSource {
                 detectTapGestures(
-                    onTap = { onClick() },
+                    onTap = { currentOnClick() },
                     onLongPress = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onDragStart()
+                        currentOnDragStart()
                         startTransfer(
                             DragAndDropTransferData(
-                                ClipData.newPlainText("taskId", task.id.toString())
+                                ClipData.newPlainText("taskId", currentTask.id.toString())
                             )
                         )
                     }

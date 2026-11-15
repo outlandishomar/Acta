@@ -29,7 +29,7 @@ fun HideTasksSettingsScreen(viewModel: TaskViewModel, onBackClick: () -> Unit) {
             TopAppBar(
                 title = {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Hide Tasks", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("Hide", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 },
                 navigationIcon = {

@@ -204,7 +204,7 @@ fun AboutAppScreen(onBackClick: () -> Unit) {
             TopAppBar(
                 title = {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("About App", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text("About", color = TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                 },
                 navigationIcon = {

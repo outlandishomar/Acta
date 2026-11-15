@@ -115,47 +115,25 @@ private fun ProfilePillCard(
     }
 }
 
+enum class SettingsSubPage {
+    PROFILE,
+    ABOUT,
+    BACKUP,
+    THEME,
+    LOCK,
+    HIDE
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onSubScreenChanged: (Boolean) -> Unit = {},
-    openProfileRequested: Boolean = false,
-    onProfileOpened: () -> Unit = {},
+    onOpenSubPage: (SettingsSubPage) -> Unit = {},
     viewModel: TaskViewModel = viewModel()
 ) {
-    var showProfileScreen by remember { mutableStateOf(false) }
-    var showThemeScreen by remember { mutableStateOf(false) }
-    var showAboutAppScreen by remember { mutableStateOf(false) }
     var showStartDayDialog by remember { mutableStateOf(false) }
-    var showBackupScreen by remember { mutableStateOf(false) }
-    var showLockScreenSettings by remember { mutableStateOf(false) }
-    var showHideTasksSettings by remember { mutableStateOf(false) }
 
-    LaunchedEffect(openProfileRequested) {
-        if (openProfileRequested) {
-            showProfileScreen = true
-            onProfileOpened()
-        }
-    }
-
-    val isInSubScreen = showProfileScreen ||
-        showAboutAppScreen ||
-        showBackupScreen ||
-        showThemeScreen ||
-        showLockScreenSettings ||
-        showHideTasksSettings
-
-    LaunchedEffect(isInSubScreen) {
-        onSubScreenChanged(isInSubScreen)
-    }
-    DisposableEffect(Unit) {
-        onDispose { onSubScreenChanged(false) }
-    }
-    
-    val context = LocalContext.current
-    
     val currentMode = ThemeState.currentThemeMode
-    val themeSubtext = when(currentMode) {
+    val themeSubtext = when (currentMode) {
         "DARK" -> "Dark Theme"
         "LIGHT" -> "Light Theme"
         "ROSY_TAUPE" -> "Rosy Taupe"
@@ -167,50 +145,23 @@ fun SettingsScreen(
 
     val isDark = ThemeState.isThemeDark
 
-    if (showProfileScreen) {
-        androidx.activity.compose.BackHandler { showProfileScreen = false }
-        ProfileScreen(onBackClick = { showProfileScreen = false })
-    } else if (showAboutAppScreen) {
-        androidx.activity.compose.BackHandler { showAboutAppScreen = false }
-        AboutAppScreen(onBackClick = { showAboutAppScreen = false })
-    } else if (showBackupScreen) {
-        androidx.activity.compose.BackHandler { showBackupScreen = false }
-        BackupScreen(onBackClick = { showBackupScreen = false })
-    } else if (showThemeScreen) {
-        androidx.activity.compose.BackHandler { showThemeScreen = false }
-        ThemeScreen(
-            onBackClick = { showThemeScreen = false }
-        )
-    } else if (showLockScreenSettings) {
-        androidx.activity.compose.BackHandler { showLockScreenSettings = false }
-        LockScreenSettingsScreen(
-            onBackClick = { showLockScreenSettings = false },
-            onBackupClick = {
-                showLockScreenSettings = false
-                showBackupScreen = true
-            }
-        )
-    } else if (showHideTasksSettings) {
-        androidx.activity.compose.BackHandler { showHideTasksSettings = false }
-        HideTasksSettingsScreen(viewModel = viewModel, onBackClick = { showHideTasksSettings = false })
-    } else {
-        Scaffold(
-            containerColor = TopBarBackground,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
-            topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = "Settings",
-                            color = TextPrimary,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = TopBarBackground)
-                )
-            }
-        ) { innerPadding ->
+    Scaffold(
+        containerColor = TopBarBackground,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Settings",
+                        color = TextPrimary,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = TopBarBackground)
+            )
+        }
+    ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -223,77 +174,76 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-            val formattedBirthday = remember(AppSettings.userBirthday) {
-                AppSettings.userBirthday?.format(
-                    DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+                val formattedBirthday = remember(AppSettings.userBirthday) {
+                    AppSettings.userBirthday?.format(
+                        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault())
+                    )
+                }
+
+                ProfilePillCard(
+                    userName = AppSettings.userName.trim(),
+                    formattedBirthday = formattedBirthday,
+                    onClick = { onOpenSubPage(SettingsSubPage.PROFILE) }
                 )
-            }
 
-            ProfilePillCard(
-                userName = AppSettings.userName.trim(),
-                formattedBirthday = formattedBirthday,
-                onClick = { showProfileScreen = true }
-            )
+                val currentDayName = AppSettings.firstDayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
 
-            val currentDayName = AppSettings.firstDayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
+                SettingsItem(
+                    icon = if (isDark) R.drawable.moonwhite else R.drawable.sundark,
+                    title = "Appearance",
+                    subtext = "$themeSubtext • ${AppIconManager.currentIcon.displayName}",
+                    onClick = { onOpenSubPage(SettingsSubPage.THEME) }
+                )
 
-            SettingsItem(
-                icon = if (isDark) R.drawable.moonwhite else R.drawable.sundark,
-                title = "Theme & Icon",
-                subtext = "$themeSubtext • ${AppIconManager.currentIcon.displayName}",
-                onClick = { showThemeScreen = true }
-            )
+                SettingsItem(
+                    icon = if (isDark) R.drawable.scheduelwhite else R.drawable.schedueldark,
+                    title = "Start Day of Week",
+                    subtext = currentDayName,
+                    onClick = { showStartDayDialog = true }
+                )
 
-            SettingsItem(
-                icon = if (isDark) R.drawable.scheduelwhite else R.drawable.schedueldark,
-                title = "Start Day of Week",
-                subtext = currentDayName,
-                onClick = { showStartDayDialog = true }
-            )
+                val hideSubtext = if (AppSettings.isHideAllTasksEnabled) "All tasks hidden"
+                    else if (AppSettings.isHideRegularTasksEnabled) "Regular tasks hidden"
+                    else if (AppSettings.isHideTodayTasksEnabled) "Today's tasks hidden"
+                    else if (AppSettings.isHideInboxTasksEnabled) "Inbox tasks hidden"
+                    else "Disabled"
 
-            val hideSubtext = if (AppSettings.isHideAllTasksEnabled) "All tasks hidden"
-                else if (AppSettings.isHideRegularTasksEnabled) "Regular tasks hidden"
-                else if (AppSettings.isHideTodayTasksEnabled) "Today's tasks hidden"
-                else if (AppSettings.isHideInboxTasksEnabled) "Inbox tasks hidden"
-                else "Disabled"
+                SettingsItem(
+                    icon = if (isDark) R.drawable.hidewhite else R.drawable.hidedark,
+                    title = "Hide",
+                    subtext = hideSubtext,
+                    onClick = { onOpenSubPage(SettingsSubPage.HIDE) }
+                )
 
-            SettingsItem(
-                icon = if (isDark) R.drawable.hidewhite else R.drawable.hidedark,
-                title = "Hide Tasks",
-                subtext = hideSubtext,
-                onClick = { showHideTasksSettings = true }
-            )
+                val lockSubtext = if (AppSettings.isLockScreenEnabled || AppSettings.isDevicePasscodeEnabled) "Enabled" else "Disabled"
 
-            val lockSubtext = if (AppSettings.isLockScreenEnabled || AppSettings.isDevicePasscodeEnabled) "Enabled" else "Disabled"
+                SettingsItem(
+                    icon = if (isDark) R.drawable.lockscreenwhite else R.drawable.lockscreendark,
+                    title = "App Lock",
+                    subtext = lockSubtext,
+                    onClick = { onOpenSubPage(SettingsSubPage.LOCK) }
+                )
 
-            SettingsItem(
-                icon = if (isDark) R.drawable.lockscreenwhite else R.drawable.lockscreendark,
-                title = "App Lock",
-                subtext = lockSubtext,
-                onClick = { showLockScreenSettings = true }
-            )
+                SettingsItem(
+                    icon = if (isDark) R.drawable.fileswhite else R.drawable.filesdark,
+                    title = "Backup",
+                    subtext = "Export or import data",
+                    onClick = { onOpenSubPage(SettingsSubPage.BACKUP) }
+                )
 
-            SettingsItem(
-                icon = if (isDark) R.drawable.fileswhite else R.drawable.filesdark,
-                title = "Backup",
-                subtext = "Export or import data",
-                onClick = { showBackupScreen = true }
-            )
+                SettingsItem(
+                    icon = Icons.Filled.Info,
+                    title = "About",
+                    subtext = "App info",
+                    onClick = { onOpenSubPage(SettingsSubPage.ABOUT) }
+                )
 
-            SettingsItem(
-                icon = Icons.Filled.Info,
-                title = "About App",
-                subtext = "App info",
-                onClick = { showAboutAppScreen = true }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
-}
 
     if (showStartDayDialog) {
         StartDaySelectionDialog(onDismiss = { showStartDayDialog = false })

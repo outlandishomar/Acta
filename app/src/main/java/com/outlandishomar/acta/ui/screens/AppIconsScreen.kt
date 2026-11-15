@@ -199,50 +199,45 @@ private fun AppIconCard(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = icon.displayName,
-            fontSize = 15.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = TextPrimary,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // Selected indicator
-        if (isSelected) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(Blue500),
-                    contentAlignment = Alignment.Center
+        Box(
+            modifier = Modifier.height(20.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Selected indicator
+            if (isSelected) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = "Selected",
-                        tint = if (ThemeState.isThemeDark) Color(0xFF1E1E1E) else Color(0xFFFFFFFF),
-                        modifier = Modifier.size(11.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(Blue500),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Check,
+                            contentDescription = "Selected",
+                            tint = if (ThemeState.isThemeDark) Color(0xFF1E1E1E) else Color(0xFFFFFFFF),
+                            modifier = Modifier.size(11.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(5.dp))
+                    Text(
+                        text = "Active",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Blue500
                     )
                 }
-                Spacer(modifier = Modifier.width(5.dp))
+            } else {
                 Text(
-                    text = "Active",
+                    text = "Tap to apply",
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Blue500
+                    color = TextSecondary
                 )
             }
-        } else {
-            Text(
-                text = "Tap to apply",
-                fontSize = 12.sp,
-                color = TextSecondary
-            )
         }
     }
 }

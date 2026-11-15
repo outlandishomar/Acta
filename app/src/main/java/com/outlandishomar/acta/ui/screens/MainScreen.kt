@@ -17,9 +17,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import java.util.concurrent.CancellationException
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -47,6 +65,7 @@ import com.outlandishomar.acta.ui.theme.Grey50
 import com.outlandishomar.acta.ui.theme.Grey100
 import com.outlandishomar.acta.ui.theme.TextPrimary
 import com.outlandishomar.acta.ui.theme.TextSecondary
+import com.outlandishomar.acta.ui.theme.TopBarBackground
 import com.outlandishomar.acta.ui.theme.White
 import com.outlandishomar.acta.ui.theme.calculateLuminance
 import com.outlandishomar.acta.ui.theme.InterText
@@ -71,8 +90,38 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
     val viewModel: TaskViewModel = viewModel()
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
 
-    var isInSettingsSubScreen by remember { mutableStateOf(false) }
-    var openProfileRequested by remember { mutableStateOf(false) }
+    var targetSubPage by remember { mutableStateOf<SettingsSubPage?>(null) }
+    var displayedSubPage by remember { mutableStateOf<SettingsSubPage?>(null) }
+    val dismissProgress = remember { Animatable(1f) }
+    val subPageScope = rememberCoroutineScope()
+    var containerWidthPx by remember { mutableFloatStateOf(0f) }
+
+    val isInSettingsSubScreen = targetSubPage != null || displayedSubPage != null
+
+    LaunchedEffect(targetSubPage) {
+        val target = targetSubPage
+        if (target != null) {
+            val isFreshOpen = displayedSubPage == null
+            displayedSubPage = target
+            if (isFreshOpen) {
+                dismissProgress.snapTo(1f)
+            }
+            val remaining = dismissProgress.value.coerceIn(0f, 1f)
+            val duration = (remaining * 300f).toInt().coerceAtLeast(1)
+            dismissProgress.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing)
+            )
+        } else if (displayedSubPage != null) {
+            val remaining = (1f - dismissProgress.value).coerceIn(0f, 1f)
+            val duration = (remaining * 300f).toInt().coerceAtLeast(1)
+            dismissProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing)
+            )
+            displayedSubPage = null
+        }
+    }
 
     var showTaskAddDialog by remember { mutableStateOf(false) }
     var showTaskAddHighlightedDialog by remember { mutableStateOf(false) }
@@ -99,57 +148,101 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
         }
     }
 
-    androidx.activity.compose.BackHandler(enabled = selectedTab == BottomTab.Settings && !isInSettingsSubScreen) {
+    BackHandler(enabled = selectedTab == BottomTab.Settings && !isInSettingsSubScreen) {
         selectedTab = BottomTab.Tasks
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    PredictiveBackHandler(enabled = targetSubPage != null) { progress ->
+        var collectedAny = false
+        try {
+            progress.collect { backEvent ->
+                collectedAny = true
+                dismissProgress.snapTo(backEvent.progress.coerceIn(0f, 1f))
+            }
+            targetSubPage = null
+        } catch (e: CancellationException) {
+            if (collectedAny) {
+                subPageScope.launch {
+                    val remaining = dismissProgress.value.coerceIn(0f, 1f)
+                    val duration = (remaining * 240f).toInt().coerceAtLeast(1)
+                    dismissProgress.animateTo(
+                        targetValue = 0f,
+                        animationSpec = tween(durationMillis = duration, easing = FastOutSlowInEasing)
+                    )
+                }
+            }
+            throw e
+        }
+    }
+
+    val density = LocalDensity.current
+    val tabEnterOffsetPx = remember(density) { with(density) { 24.dp.roundToPx() } }
+    val parallaxOffsetPx = remember(density) { with(density) { 64.dp.roundToPx().toFloat() } }
+    val subPageShadowPx = remember(density) { with(density) { 12.dp.toPx() } }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(TopBarBackground)
+            .onSizeChanged { containerWidthPx = it.width.toFloat() }
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    val p = dismissProgress.value.coerceIn(0f, 1f)
+                    if (p < 1f) {
+                        val underlyingScale = 1f - 0.06f * (1f - p)
+                        translationX = -parallaxOffsetPx * (1f - p)
+                        scaleX = underlyingScale
+                        scaleY = underlyingScale
+                    }
+                }
+        ) {
         Scaffold(
-            containerColor = White,
+            containerColor = TopBarBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             bottomBar = {
-                if (!isInSettingsSubScreen) {
-                    Column(
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(BottomBarBackground)
+                ) {
+                    HorizontalDivider(
+                        color = Divider.copy(alpha = 0.28f),
+                        thickness = 0.5.dp
+                    )
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(BottomBarBackground)
+                            .windowInsetsPadding(WindowInsets.navigationBars)
+                            .height(64.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        HorizontalDivider(
-                            color = Divider.copy(alpha = 0.28f),
-                            thickness = 0.5.dp
+                        BottomNavTab(
+                            label = BottomTab.Inbox.label,
+                            painter = inboxIcon,
+                            selected = selectedTab == BottomTab.Inbox,
+                            onClick = { selectedTab = BottomTab.Inbox },
+                            modifier = Modifier.weight(1f)
                         )
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .windowInsetsPadding(WindowInsets.navigationBars)
-                                .height(64.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            BottomNavTab(
-                                label = BottomTab.Inbox.label,
-                                painter = inboxIcon,
-                                selected = selectedTab == BottomTab.Inbox,
-                                onClick = { selectedTab = BottomTab.Inbox },
-                                modifier = Modifier.weight(1f)
-                            )
 
-                            BottomNavTab(
-                                label = BottomTab.Tasks.label,
-                                painter = tasksIcon,
-                                selected = selectedTab == BottomTab.Tasks,
-                                onClick = { selectedTab = BottomTab.Tasks },
-                                modifier = Modifier.weight(1f)
-                            )
+                        BottomNavTab(
+                            label = BottomTab.Tasks.label,
+                            painter = tasksIcon,
+                            selected = selectedTab == BottomTab.Tasks,
+                            onClick = { selectedTab = BottomTab.Tasks },
+                            modifier = Modifier.weight(1f)
+                        )
 
-                            BottomNavTab(
-                                label = BottomTab.Settings.label,
-                                painter = settingsIcon,
-                                selected = selectedTab == BottomTab.Settings,
-                                onClick = { selectedTab = BottomTab.Settings },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+                        BottomNavTab(
+                            label = BottomTab.Settings.label,
+                            painter = settingsIcon,
+                            selected = selectedTab == BottomTab.Settings,
+                            onClick = { selectedTab = BottomTab.Settings },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -158,27 +251,53 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
+                    .background(TopBarBackground)
+                    .clipToBounds()
             ) {
-                when (selectedTab) {
-                    BottomTab.Tasks -> HomeScreen(
-                        viewModel = viewModel,
-                        openTaskId = openTaskId,
-                        onTaskOpened = onTaskOpened,
-                        onProfileClick = {
-                            openProfileRequested = true
-                            selectedTab = BottomTab.Settings
-                        }
-                    )
-                    BottomTab.Inbox -> InboxScreen(
-                        viewModel = viewModel,
-                        onAddInboxTaskClick = { showInboxAdd = true }
-                    )
-                    BottomTab.Settings -> SettingsScreen(
-                        onSubScreenChanged = { isInSettingsSubScreen = it },
-                        openProfileRequested = openProfileRequested,
-                        onProfileOpened = { openProfileRequested = false },
-                        viewModel = viewModel
-                    )
+                AnimatedContent(
+                    targetState = selectedTab,
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        // Birday bottom-bar tab transition (nav_enter_anim + nav_exit_anim):
+                        // Incoming tab fades in (200ms) + rises 24dp (300ms);
+                        // Outgoing tab fades out (200ms) + scales down subtly to 0.85f (300ms).
+                        val enterFade = fadeIn(tween(durationMillis = 200, easing = EaseInOut))
+                        val enterSlide = slideInVertically(
+                            animationSpec = tween<IntOffset>(durationMillis = 300, easing = EaseInOut),
+                            initialOffsetY = { tabEnterOffsetPx }
+                        )
+                        val exitFade = fadeOut(tween(durationMillis = 200, easing = EaseInOut))
+                        val exitScale = scaleOut(
+                            animationSpec = tween(durationMillis = 300, easing = EaseInOut),
+                            targetScale = 0.85f
+                        )
+                        ContentTransform(
+                            targetContentEnter = enterFade + enterSlide,
+                            initialContentExit = exitFade + exitScale,
+                            targetContentZIndex = 1f
+                        )
+                    },
+                    label = "main_bottom_tab_transition"
+                ) { tab ->
+                    when (tab) {
+                        BottomTab.Tasks -> HomeScreen(
+                            viewModel = viewModel,
+                            openTaskId = openTaskId,
+                            onTaskOpened = onTaskOpened,
+                            onProfileClick = {
+                                selectedTab = BottomTab.Settings
+                                targetSubPage = SettingsSubPage.PROFILE
+                            }
+                        )
+                        BottomTab.Inbox -> InboxScreen(
+                            viewModel = viewModel,
+                            onAddInboxTaskClick = { showInboxAdd = true }
+                        )
+                        BottomTab.Settings -> SettingsScreen(
+                            onOpenSubPage = { page -> targetSubPage = page },
+                            viewModel = viewModel
+                        )
+                    }
                 }
 
                 if (selectedTab != BottomTab.Settings) {
@@ -275,6 +394,47 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
             onFinished = { birthdayConfettiKey = 0 },
             modifier = if (isInSettingsSubScreen) Modifier.alpha(0f) else Modifier
         )
+        }
+
+        val currentSubPage = displayedSubPage
+        if (currentSubPage != null) {
+            val touchBlockingModifier = if (targetSubPage != null) {
+                Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {}
+                )
+            } else {
+                Modifier
+            }
+            val onSubPageBack: () -> Unit = { targetSubPage = null }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        val p = dismissProgress.value.coerceIn(0f, 1f)
+                        translationX = containerWidthPx * p
+                        shadowElevation = if (p > 0f && p < 1f) subPageShadowPx else 0f
+                    }
+                    .background(TopBarBackground)
+                    .then(touchBlockingModifier)
+            ) {
+                when (currentSubPage) {
+                    SettingsSubPage.PROFILE -> ProfileScreen(onBackClick = onSubPageBack)
+                    SettingsSubPage.ABOUT -> AboutAppScreen(onBackClick = onSubPageBack)
+                    SettingsSubPage.BACKUP -> BackupScreen(onBackClick = onSubPageBack)
+                    SettingsSubPage.THEME -> ThemeScreen(onBackClick = onSubPageBack)
+                    SettingsSubPage.LOCK -> LockScreenSettingsScreen(
+                        onBackClick = onSubPageBack,
+                        onBackupClick = { targetSubPage = SettingsSubPage.BACKUP }
+                    )
+                    SettingsSubPage.HIDE -> HideTasksSettingsScreen(
+                        viewModel = viewModel,
+                        onBackClick = onSubPageBack
+                    )
+                }
+            }
+        }
     }
 
     if (showTaskAddDialog) {
