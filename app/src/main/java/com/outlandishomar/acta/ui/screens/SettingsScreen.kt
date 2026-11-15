@@ -3,6 +3,7 @@ package com.outlandishomar.acta.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +41,8 @@ import kotlinx.coroutines.launch
 import androidx.glance.appwidget.updateAll
 import androidx.compose.ui.res.painterResource
 import com.outlandishomar.acta.R
+import com.outlandishomar.acta.ui.components.SETTINGS_BACKGROUND_ART_OPTIONS
+import com.outlandishomar.acta.ui.components.SessionBackgroundArt
 import com.outlandishomar.acta.ui.components.SettingsBackgroundArt
 import com.outlandishomar.acta.ui.theme.*
 
@@ -131,6 +134,7 @@ fun SettingsScreen(
     viewModel: TaskViewModel = viewModel()
 ) {
     var showStartDayDialog by remember { mutableStateOf(false) }
+    var showArtPickerDialog by remember { mutableStateOf(false) }
 
     val currentMode = ThemeState.currentThemeMode
     val themeSubtext = when (currentMode) {
@@ -155,7 +159,11 @@ fun SettingsScreen(
                         text = "Settings",
                         color = TextPrimary,
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null
+                        ) { showArtPickerDialog = true }
                     )
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = TopBarBackground)
@@ -248,6 +256,90 @@ fun SettingsScreen(
     if (showStartDayDialog) {
         StartDaySelectionDialog(onDismiss = { showStartDayDialog = false })
     }
+
+    if (showArtPickerDialog) {
+        BackgroundArtSelectionDialog(onDismiss = { showArtPickerDialog = false })
+    }
+}
+
+@Composable
+private fun BackgroundArtSelectionDialog(onDismiss: () -> Unit) {
+    val selectedOverride = SessionBackgroundArt.manualOverrideResId
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Background Art Preview",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            SessionBackgroundArt.manualOverrideResId = null
+                            onDismiss()
+                        }
+                        .padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selectedOverride == null,
+                        onClick = null,
+                        colors = RadioButtonDefaults.colors(selectedColor = Blue500)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Auto (Random)",
+                        color = TextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                SETTINGS_BACKGROUND_ART_OPTIONS.forEachIndexed { index, option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                SessionBackgroundArt.manualOverrideResId = option.resId
+                                onDismiss()
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedOverride == option.resId,
+                            onClick = null,
+                            colors = RadioButtonDefaults.colors(selectedColor = Blue500)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "${index + 1}. ${option.displayName}",
+                            color = TextPrimary,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close", color = Blue500)
+            }
+        },
+        containerColor = White
+    )
 }
 
 @Composable
