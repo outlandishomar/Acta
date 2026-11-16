@@ -10,15 +10,12 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.Parcel
 import android.view.View
 import android.widget.RemoteViews
 import com.outlandishomar.acta.MainActivity
 import com.outlandishomar.acta.R
 import com.outlandishomar.acta.data.local.AppDatabase
-import com.outlandishomar.acta.data.model.TaskCompletion
 import com.outlandishomar.acta.data.util.RepeatTaskCalculator
 import com.outlandishomar.acta.ui.components.RichTextHelper
 import kotlinx.coroutines.Dispatchers
@@ -38,7 +35,6 @@ data class WidgetPalette(
     val text: Int,
     val mutedText: Int,
     val hintText: Int,
-    val disabledText: Int,
     val checkboxBorder: Int,
     val accent: Int,
     val onAccent: Int,
@@ -51,8 +47,7 @@ data class WidgetTaskItem(
     val notesPreview: String?,
     val timeLabel: String?,
     val repeatMode: String,
-    val dateMillis: Long,
-    val animPhase: Int? = null
+    val dateMillis: Long
 )
 
 data class WidgetSnapshot(
@@ -61,116 +56,25 @@ data class WidgetSnapshot(
     val palette: WidgetPalette
 )
 
-/**
- * Coordinates the multi-step widget checkoff animation (square check -> pencil strikethrough ->
- * inward shrink & fade -> removal) while immediately persisting completion to Room DB.
- */
-object WidgetCheckoffAnimator {
-    private data class AnimEntry(
-        val item: WidgetTaskItem,
-        @Volatile var phase: Int,
-        val originalOrder: Int
-    )
+object OptimisticCheckoffStore {
+    private val checkedTimestamps = ConcurrentHashMap<Int, Long>()
+    private const val TTL_MS = 10_000L
 
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val animatingTasks = ConcurrentHashMap<Int, AnimEntry>()
-    private val recentlyCompleted = ConcurrentHashMap<Int, Long>()
-    private val cachedOrderCounter = java.util.concurrent.atomic.AtomicInteger(0)
+    fun markChecked(taskId: Int) {
+        checkedTimestamps[taskId] = System.currentTimeMillis()
+    }
 
-    private const val RECENTLY_COMPLETED_TTL_MS = 10_000L
+    fun clear(taskId: Int) {
+        checkedTimestamps.remove(taskId)
+    }
 
-    private val PHASE_DELAYS_MS = longArrayOf(
-        0L,    // Phase 0: Square checkbox checked + 40% pencil strike
-        85L,   // Phase 1: 75% pencil strike
-        170L,  // Phase 2: 100% pencil strike + dimmed settled look
-        340L,  // Phase 3: Begin shrinking inward & fading
-        425L,  // Phase 4: Shrink inward & fade further
-        510L,  // Phase 5: Almost gone
-        595L   // Final: Remove from widget list
-    )
-
-    fun isAnimating(taskId: Int): Boolean = animatingTasks.containsKey(taskId)
-
-    fun isRecentlyCompleted(taskId: Int): Boolean {
-        val ts = recentlyCompleted[taskId] ?: return false
-        if (System.currentTimeMillis() - ts > RECENTLY_COMPLETED_TTL_MS) {
-            recentlyCompleted.remove(taskId)
+    fun isChecked(taskId: Int): Boolean {
+        val ts = checkedTimestamps[taskId] ?: return false
+        if (System.currentTimeMillis() - ts > TTL_MS) {
+            checkedTimestamps.remove(taskId)
             return false
         }
         return true
-    }
-
-    fun activeAnimatingEntries(): List<Pair<WidgetTaskItem, Int>> =
-        animatingTasks.values.map { it.item.copy(animPhase = it.phase) to it.originalOrder }
-
-    fun hasActiveAnimations(): Boolean = animatingTasks.isNotEmpty()
-
-    fun startCheckoff(context: Context, taskId: Int, repeatMode: String, dateMillis: Long) {
-        if (taskId == -1 || animatingTasks.containsKey(taskId) || isRecentlyCompleted(taskId)) return
-        val appContext = context.applicationContext
-
-        // Persist completion immediately in background so the app reflects it even before animation ends
-        WidgetRenderer.WORKER.execute {
-            runCatching {
-                runBlocking(Dispatchers.IO) {
-                    val taskDao = AppDatabase.getInstance(appContext).taskDao()
-                    if (repeatMode != "ONCE" && dateMillis != -1L) {
-                        taskDao.insertCompletion(TaskCompletion(taskId, dateMillis))
-                    } else {
-                        val task = taskDao.getTaskById(taskId)
-                        if (task != null) {
-                            taskDao.update(task.copy(isCompleted = true))
-                        }
-                    }
-                }
-            }
-        }
-
-        // Capture the item from cached snapshot (or load DB snapshot if cache cold)
-        WidgetRenderer.WORKER.execute {
-            val baseSnapshot = WidgetTaskLoader.lastSnapshot
-                ?: WidgetTaskLoader.loadSnapshot(appContext, allowCachedForAnimation = false)
-            val index = baseSnapshot.tasks.indexOfFirst { it.id == taskId }
-            val item = if (index >= 0) {
-                baseSnapshot.tasks[index]
-            } else {
-                WidgetTaskItem(
-                    id = taskId,
-                    title = "",
-                    notesPreview = null,
-                    timeLabel = null,
-                    repeatMode = repeatMode,
-                    dateMillis = dateMillis
-                )
-            }
-            val orderHint = if (index >= 0) index else cachedOrderCounter.getAndIncrement()
-            animatingTasks[taskId] = AnimEntry(item = item, phase = 0, originalOrder = orderHint)
-
-            // Frame 0 immediately
-            WidgetRenderer.renderAnimationFrame(appContext)
-
-            // Schedule phases 1..5
-            for (phase in 1..5) {
-                mainHandler.postDelayed({
-                    val entry = animatingTasks[taskId] ?: return@postDelayed
-                    entry.phase = phase
-                    WidgetRenderer.WORKER.execute {
-                        if (animatingTasks.containsKey(taskId)) {
-                            WidgetRenderer.renderAnimationFrame(appContext)
-                        }
-                    }
-                }, PHASE_DELAYS_MS[phase])
-            }
-
-            // Final removal frame
-            mainHandler.postDelayed({
-                animatingTasks.remove(taskId)
-                recentlyCompleted[taskId] = System.currentTimeMillis()
-                WidgetRenderer.WORKER.execute {
-                    WidgetRenderer.refreshAll(appContext)
-                }
-            }, PHASE_DELAYS_MS[6])
-        }
     }
 }
 
@@ -231,7 +135,6 @@ object WidgetPaletteResolver {
                     text = Color.WHITE,
                     mutedText = muted,
                     hintText = withAlpha(muted, 128),
-                    disabledText = Color.parseColor("#757575"),
                     checkboxBorder = muted,
                     accent = accent,
                     onAccent = onAccent,
@@ -251,7 +154,6 @@ object WidgetPaletteResolver {
                     text = text,
                     mutedText = muted,
                     hintText = withAlpha(muted, 128),
-                    disabledText = Color.parseColor("#888888"),
                     checkboxBorder = text,
                     accent = accent,
                     onAccent = onAccent,
@@ -273,7 +175,6 @@ object WidgetPaletteResolver {
                     text = text,
                     mutedText = muted,
                     hintText = withAlpha(muted, 128),
-                    disabledText = Color.parseColor("#8A6E6C"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#1E1E1E"),
                     onAccent = Color.parseColor("#DFC0BD"),
@@ -290,7 +191,6 @@ object WidgetPaletteResolver {
                     text = text,
                     mutedText = muted,
                     hintText = withAlpha(muted, 128),
-                    disabledText = Color.parseColor("#BDBDBD"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#1E1E1E"),
                     onAccent = Color.parseColor("#FAFAFA"),
@@ -307,7 +207,6 @@ object WidgetPaletteResolver {
                     text = text,
                     mutedText = muted,
                     hintText = withAlpha(muted, 128),
-                    disabledText = Color.parseColor("#7C8589"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#212121"),
                     onAccent = Color.parseColor("#CCD6D9"),
@@ -324,7 +223,6 @@ object WidgetPaletteResolver {
                     text = text,
                     mutedText = muted,
                     hintText = withAlpha(muted, 128),
-                    disabledText = Color.parseColor("#75786E"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#212121"),
                     onAccent = Color.parseColor("#BDBFA6"),
@@ -346,7 +244,6 @@ object WidgetPaletteResolver {
             text = Color.parseColor("#F2F2F7"),
             mutedText = muted,
             hintText = withAlpha(muted, 128),
-            disabledText = Color.parseColor("#757575"),
             checkboxBorder = muted,
             accent = Color.parseColor("#E0E0E0"),
             onAccent = Color.parseColor("#1C1C1E"),
@@ -364,7 +261,6 @@ object WidgetPaletteResolver {
             text = text,
             mutedText = muted,
             hintText = withAlpha(muted, 128),
-            disabledText = Color.parseColor("#A09694"),
             checkboxBorder = text,
             accent = Color.parseColor("#212121"),
             onAccent = Color.parseColor("#FAF3F3"),
@@ -376,108 +272,72 @@ object WidgetPaletteResolver {
 object WidgetTaskLoader {
     private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
 
-    @Volatile
-    var lastSnapshot: WidgetSnapshot? = null
-        private set
+    fun loadSnapshot(context: Context): WidgetSnapshot = runBlocking(Dispatchers.IO) {
+        val today = LocalDate.now()
+        val dateMillis = today
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
 
-    fun loadSnapshot(context: Context, allowCachedForAnimation: Boolean = false): WidgetSnapshot {
-        val animEntries = WidgetCheckoffAnimator.activeAnimatingEntries()
-        if (allowCachedForAnimation) {
-            lastSnapshot?.let { cached ->
-                val animMap = animEntries.associate { it.first.id to it.first }
-                val merged = cached.tasks
-                    .filter { task -> animMap.containsKey(task.id) || !WidgetCheckoffAnimator.isRecentlyCompleted(task.id) }
-                    .map { task -> animMap[task.id] ?: task }
-                return cached.copy(tasks = merged)
+        val taskDao = AppDatabase.getInstance(context).taskDao()
+        val rawTasks = taskDao.getTasksByDateNow(dateMillis)
+        val completions = taskDao.getCompletionsForDateNow(dateMillis)
+        val exceptions = taskDao.getExceptionsForDateNow(dateMillis)
+        val orders = taskDao.getOrdersForDateNow(dateMillis)
+
+        val completionIds = completions.map { it.taskId }.toSet()
+        val exceptionIds = exceptions.map { it.taskId }.toSet()
+        val orderMap = orders.associate { it.taskId to it.orderIndex }
+
+        val resolvedTasks = rawTasks.mapNotNull { task ->
+            if (task.isHighlighted || exceptionIds.contains(task.id)) {
+                null
+            } else if (task.repeatMode == "ONCE") {
+                val customOrder = orderMap[task.id]
+                if (customOrder != null) task.copy(orderIndex = customOrder) else task
+            } else {
+                val startDate = Instant.ofEpochMilli(task.date)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                if (RepeatTaskCalculator.doesTaskOccurOnDate(task, startDate, today)) {
+                    val isDone = completionIds.contains(task.id)
+                    val finalOrder = orderMap[task.id] ?: task.orderIndex
+                    task.copy(date = dateMillis, isCompleted = isDone, orderIndex = finalOrder)
+                } else {
+                    null
+                }
             }
         }
+            .filter { !it.isCompleted && !OptimisticCheckoffStore.isChecked(it.id) }
+            .sortedWith(compareBy({ it.orderIndex }, { it.createdAt }))
 
-        val fresh = runBlocking(Dispatchers.IO) {
-            val today = LocalDate.now()
-            val dateMillis = today
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli()
-
-            val taskDao = AppDatabase.getInstance(context).taskDao()
-            val rawTasks = taskDao.getTasksByDateNow(dateMillis)
-            val completions = taskDao.getCompletionsForDateNow(dateMillis)
-            val exceptions = taskDao.getExceptionsForDateNow(dateMillis)
-            val orders = taskDao.getOrdersForDateNow(dateMillis)
-
-            val completionIds = completions.map { it.taskId }.toSet()
-            val exceptionIds = exceptions.map { it.taskId }.toSet()
-            val orderMap = orders.associate { it.taskId to it.orderIndex }
-
-            val animMap = animEntries.associate { it.first.id to it }
-
-            val resolvedTasks = rawTasks.mapNotNull { task ->
-                if (task.isHighlighted || exceptionIds.contains(task.id)) {
-                    null
-                } else if (task.repeatMode == "ONCE") {
-                    val customOrder = orderMap[task.id]
-                    if (customOrder != null) task.copy(orderIndex = customOrder) else task
-                } else {
-                    val startDate = Instant.ofEpochMilli(task.date)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
-                    if (RepeatTaskCalculator.doesTaskOccurOnDate(task, startDate, today)) {
-                        val isDone = completionIds.contains(task.id)
-                        val finalOrder = orderMap[task.id] ?: task.orderIndex
-                        task.copy(date = dateMillis, isCompleted = isDone, orderIndex = finalOrder)
-                    } else {
-                        null
-                    }
-                }
+        val items = resolvedTasks.map { task ->
+            val plainNotes = RichTextHelper.parseToRichSpans(task.description).first
+                .lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.isNotEmpty() }
+            val timeLabel = if (task.taskTimeHour != null && task.taskTimeMinute != null) {
+                val h = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
+                val ap = if (task.taskTimeHour < 12) "AM" else "PM"
+                String.format(Locale.US, "%d:%02d %s", h, task.taskTimeMinute, ap)
+            } else {
+                null
             }
-                .filter { (!it.isCompleted && !WidgetCheckoffAnimator.isRecentlyCompleted(it.id)) || animMap.containsKey(it.id) }
-                .sortedWith(compareBy({ it.orderIndex }, { it.createdAt }))
-
-            val items = resolvedTasks.map { task ->
-                val activeAnim = animMap[task.id]
-                if (activeAnim != null) {
-                    activeAnim.first
-                } else {
-                    val plainNotes = RichTextHelper.parseToRichSpans(task.description).first
-                        .lineSequence()
-                        .map { it.trim() }
-                        .firstOrNull { it.isNotEmpty() }
-                    val timeLabel = if (task.taskTimeHour != null && task.taskTimeMinute != null) {
-                        val h = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
-                        val ap = if (task.taskTimeHour < 12) "AM" else "PM"
-                        String.format(Locale.US, "%d:%02d %s", h, task.taskTimeMinute, ap)
-                    } else {
-                        null
-                    }
-                    WidgetTaskItem(
-                        id = task.id,
-                        title = task.title,
-                        notesPreview = plainNotes,
-                        timeLabel = timeLabel,
-                        repeatMode = task.repeatMode,
-                        dateMillis = dateMillis
-                    )
-                }
-            }.toMutableList()
-
-            // Ensure any animating task whose DB row was already filtered out stays in place until animation ends
-            val existingIds = items.map { it.id }.toHashSet()
-            animEntries.sortedBy { it.second }.forEach { (animItem, pos) ->
-                if (!existingIds.contains(animItem.id) && animItem.title.isNotEmpty()) {
-                    val insertIdx = pos.coerceIn(0, items.size)
-                    items.add(insertIdx, animItem)
-                }
-            }
-
-            WidgetSnapshot(
-                dateLabel = today.format(DATE_FORMATTER),
-                tasks = items,
-                palette = WidgetPaletteResolver.resolve(context)
+            WidgetTaskItem(
+                id = task.id,
+                title = task.title,
+                notesPreview = plainNotes,
+                timeLabel = timeLabel,
+                repeatMode = task.repeatMode,
+                dateMillis = dateMillis
             )
         }
 
-        lastSnapshot = fresh
-        return fresh
+        WidgetSnapshot(
+            dateLabel = today.format(DATE_FORMATTER),
+            tasks = items,
+            palette = WidgetPaletteResolver.resolve(context)
+        )
     }
 }
 
@@ -504,27 +364,9 @@ object WidgetRenderer {
         render(app, manager, ids)
     }
 
-    fun renderAnimationFrame(context: Context) {
-        val app = context.applicationContext
-        val manager = AppWidgetManager.getInstance(app) ?: return
-        val ids = manager.getAppWidgetIds(ComponentName(app, TaskWidgetReceiver::class.java))
-        if (ids.isEmpty()) return
-        val snapshot = WidgetTaskLoader.loadSnapshot(app, allowCachedForAnimation = true)
-        if (usesDirectCollections(Build.VERSION.SDK_INT)) {
-            for (id in ids) {
-                val partial = RemoteViews(app.packageName, R.layout.acta_widget)
-                bindDirectCollection(app, partial, id, snapshot)
-                manager.partiallyUpdateAppWidget(id, partial)
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            manager.notifyAppWidgetViewDataChanged(ids, R.id.acta_widget_list)
-        }
-    }
-
     fun render(context: Context, manager: AppWidgetManager, ids: IntArray) {
         if (ids.isEmpty()) return
-        val snapshot = WidgetTaskLoader.loadSnapshot(context, allowCachedForAnimation = false)
+        val snapshot = WidgetTaskLoader.loadSnapshot(context)
         for (id in ids) {
             val views = buildViews(context, id, snapshot)
             manager.updateAppWidget(id, views)
@@ -540,10 +382,9 @@ object WidgetRenderer {
         val views = RemoteViews(context.packageName, R.layout.acta_widget)
         val palette = snapshot.palette
 
-        val visibleCount = snapshot.tasks.count { it.animPhase == null }
         views.setTextViewText(R.id.acta_widget_title, snapshot.dateLabel)
-        if (visibleCount > 0) {
-            views.setTextViewText(R.id.acta_widget_subtitle, visibleCount.toString())
+        if (snapshot.tasks.isNotEmpty()) {
+            views.setTextViewText(R.id.acta_widget_subtitle, snapshot.tasks.size.toString())
             views.setViewVisibility(R.id.acta_widget_subtitle, View.VISIBLE)
         } else {
             views.setViewVisibility(R.id.acta_widget_subtitle, View.GONE)
