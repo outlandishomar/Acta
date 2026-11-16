@@ -7,4 +7,12 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="acta_widget_background">#EEE2DF</color>
+    <color name="acta_widget_card">#F8EFEF</color>
+    <color name="acta_widget_text">#212121</color>
+    <color name="acta_widget_muted_text">#6E6462</color>
+    <color name="acta_widget_accent">#212121</color>
+    <color name="acta_widget_border">#33212121</color>
+    <color name="acta_widget_on_accent">#EEE2DF</color>
 </resources>

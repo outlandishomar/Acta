@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="acta_widget_background">#1C1C1E</color>
+    <color name="acta_widget_card">#2C2C2E</color>
+    <color name="acta_widget_text">#F2F2F7</color>
+    <color name="acta_widget_muted_text">#AEAEB2</color>
+    <color name="acta_widget_accent">#E0E0E0</color>
+    <color name="acta_widget_border">#454548</color>
+    <color name="acta_widget_on_accent">#1C1C1E</color>
+</resources>

@@ -91,7 +91,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.glance.appwidget.updateAll
 import androidx.compose.ui.res.painterResource
 import com.outlandishomar.acta.ui.theme.ThemeState
 import kotlinx.coroutines.launch

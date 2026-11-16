@@ -85,26 +85,50 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- Glance Widget Receiver -->
+        <!-- Native AppWidget Receiver -->
         <receiver
             android:name=".widget.TaskWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.DATE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/task_widget_info" />
         </receiver>
 
+        <!-- Widget List RemoteViewsService -->
+        <service
+            android:name=".widget.TasksWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+        <!-- Widget Quick Capture Pop-up Activity -->
+        <activity
+            android:name=".widget.QuickCaptureActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Acta.QuickCapture"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+
+        <!-- Widget Invisible Tap Handler Activity -->
+        <activity
+            android:name=".widget.WidgetTapActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="" />
+
         <!-- Task Alarm Receiver -->
         <receiver
             android:name=".receiver.TaskAlarmReceiver"
-            android:exported="false" />
-
-        <!-- Widget Action Receiver -->
-        <receiver
-            android:name=".widget.WidgetActionReceiver"
             android:exported="false" />
     </application>
 

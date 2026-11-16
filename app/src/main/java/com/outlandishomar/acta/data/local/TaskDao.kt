@@ -38,6 +38,9 @@ interface TaskDao {
     @Query("SELECT * FROM task_exceptions WHERE dateMillis = :dateMillis")
     fun getExceptionsForDate(dateMillis: Long): Flow<List<TaskException>>
 
+    @Query("SELECT * FROM task_exceptions WHERE dateMillis = :dateMillis")
+    suspend fun getExceptionsForDateNow(dateMillis: Long): List<TaskException>
+
     @Query("DELETE FROM task_exceptions WHERE taskId = :taskId AND dateMillis = :dateMillis")
     suspend fun deleteException(taskId: Int, dateMillis: Long)
 
@@ -154,6 +157,9 @@ interface TaskDao {
 
     @Query("SELECT * FROM task_orders WHERE dateMillis = :dateMillis")
     fun getOrdersForDate(dateMillis: Long): Flow<List<com.outlandishomar.acta.data.model.TaskOrder>>
+
+    @Query("SELECT * FROM task_orders WHERE dateMillis = :dateMillis")
+    suspend fun getOrdersForDateNow(dateMillis: Long): List<com.outlandishomar.acta.data.model.TaskOrder>
 
     @Query("SELECT * FROM task_orders")
     suspend fun getAllTaskOrders(): List<com.outlandishomar.acta.data.model.TaskOrder>

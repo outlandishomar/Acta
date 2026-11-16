@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import androidx.glance.appwidget.updateAll
 import androidx.compose.ui.res.painterResource
 import com.outlandishomar.acta.R
 import com.outlandishomar.acta.ui.components.SETTINGS_BACKGROUND_ART_OPTIONS

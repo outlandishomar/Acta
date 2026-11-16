@@ -62,8 +62,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    implementation(libs.androidx.glance.appwidget)
-    implementation(libs.androidx.glance.material3)
     implementation(libs.calvin.reorderable)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)

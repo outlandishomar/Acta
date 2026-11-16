@@ -1,441 +1,511 @@
 package com.outlandishomar.acta.widget
 
+import android.annotation.TargetApi
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ComponentName
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.glance.*
-import androidx.glance.action.clickable
-import androidx.glance.appwidget.GlanceAppWidget
-import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.provideContent
-import androidx.glance.layout.*
-import androidx.glance.text.FontWeight
-import androidx.glance.text.Text
-import androidx.glance.text.TextDecoration
-import androidx.glance.text.TextStyle
-import androidx.glance.appwidget.action.actionSendBroadcast
-import androidx.glance.appwidget.action.actionRunCallback
-import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionParametersOf
-import androidx.glance.appwidget.action.ActionCallback
-import com.outlandishomar.acta.data.model.TaskCompletion
+import android.content.res.Configuration
+import android.graphics.Color
+import android.net.Uri
+import android.os.Build
+import android.os.Parcel
+import android.view.View
+import android.widget.RemoteViews
 import com.outlandishomar.acta.MainActivity
+import com.outlandishomar.acta.R
 import com.outlandishomar.acta.data.local.AppDatabase
-import com.outlandishomar.acta.data.model.CustomAlert
-import com.outlandishomar.acta.data.model.SubTask
-import com.outlandishomar.acta.data.model.Task
+import com.outlandishomar.acta.data.util.RepeatTaskCalculator
+import com.outlandishomar.acta.ui.components.RichTextHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import androidx.glance.color.ColorProvider
-import com.outlandishomar.acta.R
-import com.outlandishomar.acta.ui.components.RichTextHelper
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 
-class TaskWidget : GlanceAppWidget() {
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val database = AppDatabase.getInstance(context)
-        val taskDao = database.taskDao()
+data class WidgetPalette(
+    val background: Int,
+    val card: Int,
+    val text: Int,
+    val mutedText: Int,
+    val accent: Int,
+    val onAccent: Int,
+    val border: Int
+)
 
-        val dateMillis = LocalDate.now()
+data class WidgetTaskItem(
+    val id: Int,
+    val title: String,
+    val notesPreview: String?,
+    val timeLabel: String?,
+    val repeatMode: String,
+    val dateMillis: Long
+)
+
+data class WidgetSnapshot(
+    val dateLabel: String,
+    val tasks: List<WidgetTaskItem>,
+    val palette: WidgetPalette
+)
+
+object OptimisticCheckoffStore {
+    private val checkedTimestamps = ConcurrentHashMap<Int, Long>()
+    private const val TTL_MS = 10_000L
+
+    fun markChecked(taskId: Int) {
+        checkedTimestamps[taskId] = System.currentTimeMillis()
+    }
+
+    fun clear(taskId: Int) {
+        checkedTimestamps.remove(taskId)
+    }
+
+    fun isChecked(taskId: Int): Boolean {
+        val ts = checkedTimestamps[taskId] ?: return false
+        if (System.currentTimeMillis() - ts > TTL_MS) {
+            checkedTimestamps.remove(taskId)
+            return false
+        }
+        return true
+    }
+}
+
+object WidgetPaletteResolver {
+    private fun blend(c1: Int, c2: Int, ratio: Float): Int {
+        val inv = 1f - ratio
+        val r = (Color.red(c1) * inv + Color.red(c2) * ratio).toInt().coerceIn(0, 255)
+        val g = (Color.green(c1) * inv + Color.green(c2) * ratio).toInt().coerceIn(0, 255)
+        val b = (Color.blue(c1) * inv + Color.blue(c2) * ratio).toInt().coerceIn(0, 255)
+        return Color.rgb(r, g, b)
+    }
+
+    private fun withAlpha(color: Int, alpha: Int): Int {
+        return Color.argb(alpha.coerceIn(0, 255), Color.red(color), Color.green(color), Color.blue(color))
+    }
+
+    private fun parseHex(hexStr: String?): Int? {
+        if (hexStr.isNullOrBlank()) return null
+        return try {
+            val clean = hexStr.trim().removePrefix("#")
+            when (clean.length) {
+                6 -> Color.parseColor("#FF$clean")
+                8 -> Color.parseColor("#$clean")
+                3 -> {
+                    val expanded = clean.map { "$it$it" }.joinToString("")
+                    Color.parseColor("#FF$expanded")
+                }
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun luminance(color: Int): Float {
+        return (0.299f * Color.red(color) + 0.587f * Color.green(color) + 0.114f * Color.blue(color)) / 255f
+    }
+
+    fun resolve(context: Context): WidgetPalette {
+        val prefs = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        var mode = prefs.getString("mode", "SYSTEM") ?: "SYSTEM"
+        if (mode == "GREY") mode = "DARK"
+
+        val customPrimary = parseHex(prefs.getString("custom_primary", null))
+        val customSecondary = parseHex(prefs.getString("custom_secondary", null))
+
+        if (customPrimary != null) {
+            val lum = luminance(customPrimary)
+            val isDark = lum <= 0.5f
+            return if (isDark) {
+                val accent = customSecondary ?: Color.parseColor("#E0E0E0")
+                val onAccent = if (luminance(accent) > 0.5f) Color.parseColor("#18181A") else Color.WHITE
+                WidgetPalette(
+                    background = customPrimary,
+                    card = blend(customPrimary, Color.WHITE, 0.12f),
+                    text = Color.WHITE,
+                    mutedText = Color.parseColor("#AAAAAA"),
+                    accent = accent,
+                    onAccent = onAccent,
+                    border = withAlpha(Color.WHITE, 38)
+                )
+            } else {
+                val useDarkTint = lum > 0.85f
+                val card = if (useDarkTint) blend(customPrimary, Color.BLACK, 0.08f) else blend(customPrimary, Color.WHITE, 0.22f)
+                val accent = customSecondary ?: Color.parseColor("#1E1E1E")
+                val onAccent = if (luminance(accent) > 0.5f) Color.parseColor("#1E1E1E") else Color.WHITE
+                WidgetPalette(
+                    background = customPrimary,
+                    card = card,
+                    text = Color.parseColor("#1E1E1E"),
+                    mutedText = Color.parseColor("#555555"),
+                    accent = accent,
+                    onAccent = onAccent,
+                    border = withAlpha(Color.BLACK, 38)
+                )
+            }
+        }
+
+        val isSysDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+        return when (mode) {
+            "ROSY_TAUPE" -> WidgetPalette(
+                background = Color.parseColor("#C89F9C"),
+                card = Color.parseColor("#D8B2AF"),
+                text = Color.parseColor("#1E1E1E"),
+                mutedText = Color.parseColor("#5A4341"),
+                accent = Color.parseColor("#1E1E1E"),
+                onAccent = Color.parseColor("#DFC0BD"),
+                border = withAlpha(Color.parseColor("#1E1E1E"), 45)
+            )
+            "DUST_GREY" -> WidgetPalette(
+                background = Color.parseColor("#D1D1D1"),
+                card = Color.parseColor("#DCDCE0"),
+                text = Color.parseColor("#212121"),
+                mutedText = Color.parseColor("#757575"),
+                accent = Color.parseColor("#1E1E1E"),
+                onAccent = Color.parseColor("#FAFAFA"),
+                border = withAlpha(Color.parseColor("#1E1E1E"), 40)
+            )
+            "SILVER" -> WidgetPalette(
+                background = Color.parseColor("#B0BBBF"),
+                card = Color.parseColor("#C0CBCE"),
+                text = Color.parseColor("#212121"),
+                mutedText = Color.parseColor("#4F575B"),
+                accent = Color.parseColor("#212121"),
+                onAccent = Color.parseColor("#CCD6D9"),
+                border = withAlpha(Color.parseColor("#212121"), 45)
+            )
+            "ASH_GREY" -> WidgetPalette(
+                background = Color.parseColor("#A1A499"),
+                card = Color.parseColor("#B1B4A9"),
+                text = Color.parseColor("#212121"),
+                mutedText = Color.parseColor("#4A4D43"),
+                accent = Color.parseColor("#212121"),
+                onAccent = Color.parseColor("#BDBFA6"),
+                border = withAlpha(Color.parseColor("#212121"), 45)
+            )
+            "SEASHELL", "LIGHT" -> WidgetPalette(
+                background = Color.parseColor("#EEE2DF"),
+                card = Color.parseColor("#F8EFEF"),
+                text = Color.parseColor("#212121"),
+                mutedText = Color.parseColor("#6E6462"),
+                accent = Color.parseColor("#212121"),
+                onAccent = Color.parseColor("#FAF3F3"),
+                border = withAlpha(Color.parseColor("#212121"), 45)
+            )
+            "DARK" -> WidgetPalette(
+                background = Color.parseColor("#1C1C1E"),
+                card = Color.parseColor("#2C2C2E"),
+                text = Color.parseColor("#F2F2F7"),
+                mutedText = Color.parseColor("#AEAEB2"),
+                accent = Color.parseColor("#E0E0E0"),
+                onAccent = Color.parseColor("#1C1C1E"),
+                border = Color.parseColor("#38383A")
+            )
+            else -> if (isSysDark) {
+                WidgetPalette(
+                    background = Color.parseColor("#1C1C1E"),
+                    card = Color.parseColor("#2C2C2E"),
+                    text = Color.parseColor("#F2F2F7"),
+                    mutedText = Color.parseColor("#AEAEB2"),
+                    accent = Color.parseColor("#E0E0E0"),
+                    onAccent = Color.parseColor("#1C1C1E"),
+                    border = Color.parseColor("#38383A")
+                )
+            } else {
+                WidgetPalette(
+                    background = Color.parseColor("#EEE2DF"),
+                    card = Color.parseColor("#F8EFEF"),
+                    text = Color.parseColor("#212121"),
+                    mutedText = Color.parseColor("#6E6462"),
+                    accent = Color.parseColor("#212121"),
+                    onAccent = Color.parseColor("#FAF3F3"),
+                    border = withAlpha(Color.parseColor("#212121"), 45)
+                )
+            }
+        }
+    }
+}
+
+object WidgetTaskLoader {
+    private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
+
+    fun loadSnapshot(context: Context): WidgetSnapshot = runBlocking(Dispatchers.IO) {
+        val today = LocalDate.now()
+        val dateMillis = today
             .atStartOfDay(ZoneId.systemDefault())
             .toInstant()
             .toEpochMilli()
 
-        // Use suspend (non-Flow) queries for instant fresh reads
-        val allTasks = taskDao.getTasksByDateNow(dateMillis)
-        // Repeating tasks store their completion in task_completions, not the
-        // isCompleted column. Merge them the same way the app does so the widget
-        // reflects a completion immediately.
+        val taskDao = AppDatabase.getInstance(context).taskDao()
+        val rawTasks = taskDao.getTasksByDateNow(dateMillis)
         val completions = taskDao.getCompletionsForDateNow(dateMillis)
+        val exceptions = taskDao.getExceptionsForDateNow(dateMillis)
+        val orders = taskDao.getOrdersForDateNow(dateMillis)
+
         val completionIds = completions.map { it.taskId }.toSet()
-        val resolvedTasks = allTasks.map { task ->
-            if (task.repeatMode == "ONCE") task
-            else task.copy(isCompleted = completionIds.contains(task.id))
-        }
-        val firstTask = resolvedTasks.filter { !it.isHighlighted && !it.isCompleted }.firstOrNull()
+        val exceptionIds = exceptions.map { it.taskId }.toSet()
+        val orderMap = orders.associate { it.taskId to it.orderIndex }
 
-        val subTasks = if (firstTask != null) {
-            taskDao.getSubTasksForTasksNow(listOf(firstTask.id))
-        } else {
-            emptyList()
-        }
-
-        val prefs = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
-        var savedMode = prefs.getString("mode", "SYSTEM") ?: "SYSTEM"
-        if (savedMode == "GREY") {
-            savedMode = "DARK"
-        }
-
-        provideContent {
-            GlanceTheme {
-                WidgetContent(context, firstTask, subTasks, savedMode)
-            }
-        }
-    }
-
-    @Composable
-    private fun WidgetContent(context: Context, task: Task?, subTasks: List<SubTask>, savedMode: String) {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            if (task != null) {
-                putExtra("open_task_id", task.id)
-            }
-        }
-
-        // Premium Dark Aesthetic
-        val bgColor = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFF18181A), night = Color(0xFF18181A))
-            "LIGHT" -> ColorProvider(day = Color.White, night = Color.White)
-            else -> ColorProvider(day = Color.White, night = Color(0xFF18181A))
-        }
-        val textColorSecondary = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFFAAAAAA), night = Color(0xFFAAAAAA))
-            "LIGHT" -> ColorProvider(day = Color(0xFF757575), night = Color(0xFF757575))
-            else -> ColorProvider(day = Color(0xFF757575), night = Color(0xFFAAAAAA))
-        }
-
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(bgColor)
-                .padding(16.dp)
-                .clickable(actionStartActivity(intent))
-        ) {
-            if (task == null) {
-                EmptyStateContent(savedMode)
+        val resolvedTasks = rawTasks.mapNotNull { task ->
+            if (task.isHighlighted || exceptionIds.contains(task.id)) {
+                null
+            } else if (task.repeatMode == "ONCE") {
+                val customOrder = orderMap[task.id]
+                if (customOrder != null) task.copy(orderIndex = customOrder) else task
             } else {
-                Column(modifier = GlanceModifier.fillMaxSize()) {
-                    // Task content
-                    TaskContent(task = task, subTasks = subTasks, savedMode = savedMode)
-
-                    // Push sync icon to bottom-right
-                    Spacer(modifier = GlanceModifier.defaultWeight())
-                    Row(
-                        modifier = GlanceModifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Image(
-                            provider = ImageProvider(R.drawable.updatebuttonwhite),
-                            contentDescription = "Refresh",
-                            modifier = GlanceModifier
-                                .size(22.dp)
-                                .clickable(
-                                    actionSendBroadcast(
-                                        Intent(WidgetActionReceiver.ACTION_REFRESH).apply {
-                                            component = ComponentName(context, WidgetActionReceiver::class.java)
-                                        }
-                                    )
-                                ),
-                            colorFilter = ColorFilter.tint(textColorSecondary)
-                        )
-                    }
+                val startDate = Instant.ofEpochMilli(task.date)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                if (RepeatTaskCalculator.doesTaskOccurOnDate(task, startDate, today)) {
+                    val isDone = completionIds.contains(task.id)
+                    val finalOrder = orderMap[task.id] ?: task.orderIndex
+                    task.copy(date = dateMillis, isCompleted = isDone, orderIndex = finalOrder)
+                } else {
+                    null
                 }
             }
         }
-    }
+            .filter { !it.isCompleted && !OptimisticCheckoffStore.isChecked(it.id) }
+            .sortedWith(compareBy({ it.orderIndex }, { it.createdAt }))
 
-    @Composable
-    private fun EmptyStateContent(savedMode: String) {
-        val textColorSecondary = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFFAAAAAA), night = Color(0xFFAAAAAA))
-            "LIGHT" -> ColorProvider(day = Color(0xFF757575), night = Color(0xFF757575))
-            else -> ColorProvider(day = Color(0xFF757575), night = Color(0xFFAAAAAA))
-        }
-        val checkColor = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFF8E8E93), night = Color(0xFF8E8E93))
-            "LIGHT" -> ColorProvider(day = Color(0xFFBDBDBD), night = Color(0xFFBDBDBD))
-            else -> ColorProvider(day = Color(0xFFBDBDBD), night = Color(0xFF8E8E93))
-        }
-
-        Box(
-            modifier = GlanceModifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "✓",
-                    style = TextStyle(
-                        color = checkColor,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-                Spacer(modifier = GlanceModifier.height(8.dp))
-                Text(
-                    text = "No tasks for today",
-                    style = TextStyle(
-                        color = textColorSecondary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                )
+        val items = resolvedTasks.map { task ->
+            val plainNotes = RichTextHelper.parseToRichSpans(task.description).first
+                .lineSequence()
+                .map { it.trim() }
+                .firstOrNull { it.isNotEmpty() }
+            val timeLabel = if (task.taskTimeHour != null && task.taskTimeMinute != null) {
+                val h = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
+                val ap = if (task.taskTimeHour < 12) "AM" else "PM"
+                String.format(Locale.US, "%d:%02d %s", h, task.taskTimeMinute, ap)
+            } else {
+                null
             }
-        }
-    }
-
-    @Composable
-    private fun TaskContent(task: Task, subTasks: List<SubTask>, savedMode: String) {
-        val context = LocalContext.current
-        val textColorPrimary = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color.White, night = Color.White)
-            "LIGHT" -> ColorProvider(day = Color(0xFF212121), night = Color(0xFF212121))
-            else -> ColorProvider(day = Color(0xFF212121), night = Color.White)
-        }
-        val textColorSecondary = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFFAAAAAA), night = Color(0xFFAAAAAA))
-            "LIGHT" -> ColorProvider(day = Color(0xFF757575), night = Color(0xFF757575))
-            else -> ColorProvider(day = Color(0xFF757575), night = Color(0xFFAAAAAA))
-        }
-        val connectorColor = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFF4A4A4C), night = Color(0xFF4A4A4C))
-            "LIGHT" -> ColorProvider(day = Color(0xFFBDBDBD), night = Color(0xFFBDBDBD))
-            else -> ColorProvider(day = Color(0xFFBDBDBD), night = Color(0xFF4A4A4C))
-        }
-        val checkCircleColor = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFF8E8E93), night = Color(0xFF8E8E93))
-            "LIGHT" -> ColorProvider(day = Color(0xFFBDBDBD), night = Color(0xFFBDBDBD))
-            else -> ColorProvider(day = Color(0xFFBDBDBD), night = Color(0xFF8E8E93))
-        }
-        
-        // Standard disabled colors for checked text
-        val checkedTextColor = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFF6E6E73), night = Color(0xFF6E6E73))
-            "LIGHT" -> ColorProvider(day = Color(0xFF9E9E9E), night = Color(0xFF9E9E9E))
-            else -> ColorProvider(day = Color(0xFF9E9E9E), night = Color(0xFF6E6E73))
-        }
-        
-        val metaIconColor = when(savedMode) {
-            "DARK" -> ColorProvider(day = Color(0xFF8E8E93), night = Color(0xFF8E8E93))
-            "LIGHT" -> ColorProvider(day = Color(0xFF9E9E9E), night = Color(0xFF9E9E9E))
-            else -> ColorProvider(day = Color(0xFF9E9E9E), night = Color(0xFF8E8E93))
-        }
-
-        val widgetNotes = RichTextHelper.parseToRichSpans(task.description).first
-        val hasContent = widgetNotes.isNotBlank() || subTasks.isNotEmpty()
-
-        val taskIdKey = ActionParameters.Key<Int>("task_id")
-        val repeatModeKey = ActionParameters.Key<String>("repeat_mode")
-        val taskDateKey = ActionParameters.Key<Long>("task_date")
-        
-        val toggleTaskAction = actionRunCallback<ToggleTaskAction>(
-            actionParametersOf(
-                taskIdKey to task.id,
-                repeatModeKey to task.repeatMode,
-                taskDateKey to task.date
+            WidgetTaskItem(
+                id = task.id,
+                title = task.title,
+                notesPreview = plainNotes,
+                timeLabel = timeLabel,
+                repeatMode = task.repeatMode,
+                dateMillis = dateMillis
             )
+        }
+
+        WidgetSnapshot(
+            dateLabel = today.format(DATE_FORMATTER),
+            tasks = items,
+            palette = WidgetPaletteResolver.resolve(context)
         )
-        
-        Column(modifier = GlanceModifier.fillMaxWidth()) {
-            // === TITLE ROW ===
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = GlanceModifier.fillMaxWidth()
-            ) {
-                // Check circle
-                Image(
-                    provider = ImageProvider(
-                        if (task.isCompleted) R.drawable.widget_circle_checked
-                        else R.drawable.widget_circle_unchecked
-                    ),
-                    contentDescription = "Mark complete",
-                    modifier = GlanceModifier.size(22.dp).clickable(
-                        toggleTaskAction
-                    ),
-                    colorFilter = ColorFilter.tint(checkCircleColor)
-                )
-
-                Spacer(modifier = GlanceModifier.width(10.dp))
-
-                // Task title
-                Text(
-                    text = task.title,
-                    style = TextStyle(
-                        color = if (task.isCompleted) checkedTextColor else textColorPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough
-                                         else TextDecoration.None
-                    ),
-                    maxLines = 1
-                )
-
-                // Time
-                if (task.taskTimeHour != null && task.taskTimeMinute != null) {
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-                    val h = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
-                    val ap = if (task.taskTimeHour < 12) "AM" else "PM"
-                    Text(
-                        text = String.format("%d:%02d %s", h, task.taskTimeMinute, ap),
-                        style = TextStyle(color = metaIconColor, fontSize = 11.sp, fontWeight = FontWeight.Medium),
-                        maxLines = 1
-                    )
-
-                    // Notification bell
-                    val hasAlert = task.alertEnabled ||
-                        CustomAlert.parseList(task.additionalAlerts).any { it.isEnabled }
-                    if (hasAlert) {
-                        Spacer(modifier = GlanceModifier.width(3.dp))
-                        Image(
-                            provider = ImageProvider(R.drawable.widget_icon_notification),
-                            contentDescription = "Alert",
-                            modifier = GlanceModifier.size(13.dp),
-                            colorFilter = ColorFilter.tint(metaIconColor)
-                        )
-                    }
-                }
-
-                // Push repeat icon right
-                Spacer(modifier = GlanceModifier.defaultWeight())
-
-                if (task.repeatMode != "ONCE") {
-                    Image(
-                        provider = ImageProvider(R.drawable.widget_icon_repeat),
-                        contentDescription = "Repeat",
-                        modifier = GlanceModifier.size(14.dp),
-                        colorFilter = ColorFilter.tint(metaIconColor)
-                    )
-                }
-            }
-
-            // === STUB: bridge from circle bottom to the connector rows below ===
-            if (hasContent) {
-                Row(modifier = GlanceModifier.fillMaxWidth().height(6.dp)) {
-                    Box(modifier = GlanceModifier.width(22.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                        Box(modifier = GlanceModifier.width(1.dp).fillMaxHeight().background(connectorColor)) {}
-                    }
-                }
-            }
-
-            // === NOTES ROW ===
-            if (widgetNotes.isNotBlank()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = GlanceModifier.fillMaxWidth().height(28.dp)
-                ) {
-                    // Vertical line (show only if subtasks follow)
-                    if (subTasks.isNotEmpty()) {
-                        Box(modifier = GlanceModifier.width(22.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
-                            Box(modifier = GlanceModifier.width(1.dp).fillMaxHeight().background(connectorColor)) {}
-                        }
-                    } else {
-                        Spacer(modifier = GlanceModifier.width(22.dp))
-                    }
-
-                    Spacer(modifier = GlanceModifier.width(10.dp))
-
-                    Text(
-                        text = widgetNotes,
-                        style = TextStyle(color = textColorSecondary, fontSize = 14.sp),
-                        maxLines = 1
-                    )
-                }
-            }
-
-            // === SUBTASK ROWS ===
-            subTasks.forEachIndexed { index, subTask ->
-                val isLast = index == subTasks.lastIndex
-                
-                val subTaskIdKey = ActionParameters.Key<Int>("subtask_id")
-                val toggleSubTaskAction = actionRunCallback<ToggleSubTaskAction>(
-                    actionParametersOf(subTaskIdKey to subTask.id)
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = GlanceModifier.fillMaxWidth().height(28.dp)
-                ) {
-                    // Spine Box: Draws vertical line and horizontal branch intrinsically
-                    Box(modifier = GlanceModifier.width(22.dp).fillMaxHeight()) {
-                        // Vertical Line Layer
-                        Column(modifier = GlanceModifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Box(modifier = GlanceModifier.width(1.dp).defaultWeight().background(connectorColor)) {}
-                            if (!isLast) {
-                                Box(modifier = GlanceModifier.width(1.dp).defaultWeight().background(connectorColor)) {}
-                            } else {
-                                Spacer(modifier = GlanceModifier.defaultWeight())
-                            }
-                        }
-                        
-                        // Horizontal Branch Layer
-                        Column(modifier = GlanceModifier.fillMaxSize()) {
-                            Spacer(modifier = GlanceModifier.defaultWeight())
-                            Row(modifier = GlanceModifier.fillMaxWidth()) {
-                                Spacer(modifier = GlanceModifier.defaultWeight())
-                                Box(modifier = GlanceModifier.defaultWeight().height(1.dp).background(connectorColor)) {}
-                            }
-                            Spacer(modifier = GlanceModifier.defaultWeight())
-                        }
-                    }
-
-                    Spacer(modifier = GlanceModifier.width(2.dp))
-
-                    // Subtask circle
-                    Image(
-                        provider = ImageProvider(
-                            if (subTask.isCompleted) R.drawable.widget_circle_checked
-                            else R.drawable.widget_circle_unchecked
-                        ),
-                        contentDescription = "Toggle subtask",
-                        modifier = GlanceModifier.size(16.dp).clickable(
-                            toggleSubTaskAction
-                        ),
-                        colorFilter = ColorFilter.tint(checkCircleColor)
-                    )
-
-                    Spacer(modifier = GlanceModifier.width(6.dp))
-
-                    // Subtask title
-                    Text(
-                        text = subTask.title,
-                        style = TextStyle(
-                            color = if (subTask.isCompleted) checkedTextColor else textColorSecondary,
-                            fontSize = 14.sp,
-                            textDecoration = if (subTask.isCompleted) TextDecoration.LineThrough
-                                             else TextDecoration.None
-                        ),
-                        maxLines = 1,
-                        modifier = GlanceModifier.defaultWeight()
-                    )
-                }
-            }
-        }
     }
 }
 
-class ToggleTaskAction : ActionCallback {
-    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        val taskId = parameters[ActionParameters.Key<Int>("task_id")] ?: return
-        val repeatMode = parameters[ActionParameters.Key<String>("repeat_mode")] ?: "ONCE"
-        val taskDate = parameters[ActionParameters.Key<Long>("task_date")] ?: -1L
-        
-        val database = AppDatabase.getInstance(context)
-        val taskDao = database.taskDao()
-        if (taskId != -1 && taskDate != -1L) {
-            if (repeatMode != "ONCE") {
-                taskDao.insertCompletion(TaskCompletion(taskId, taskDate))
+object WidgetRenderer {
+    private const val REQUEST_CAPTURE = 4612
+    private const val REQUEST_ROW = 4613
+    private const val REQUEST_HOME_BASE = 3 shl 20
+    internal const val DIRECT_COLLECTION_BUDGET_BYTES = 256 * 1024
+
+    val WORKER = Executors.newSingleThreadExecutor { task -> Thread(task, "acta-widget") }
+
+    fun refreshAllAsync(context: Context) {
+        val app = context.applicationContext
+        WORKER.execute {
+            runCatching { refreshAll(app) }
+        }
+    }
+
+    fun refreshAll(context: Context) {
+        val app = context.applicationContext
+        val manager = AppWidgetManager.getInstance(app) ?: return
+        val ids = manager.getAppWidgetIds(ComponentName(app, TaskWidgetReceiver::class.java))
+        if (ids.isEmpty()) return
+        render(app, manager, ids)
+    }
+
+    fun render(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        if (ids.isEmpty()) return
+        val snapshot = WidgetTaskLoader.loadSnapshot(context)
+        for (id in ids) {
+            val views = buildViews(context, id, snapshot)
+            manager.updateAppWidget(id, views)
+        }
+        if (!usesDirectCollections(Build.VERSION.SDK_INT)) {
+            @Suppress("DEPRECATION")
+            manager.notifyAppWidgetViewDataChanged(ids, R.id.acta_widget_list)
+        }
+        TaskWidgetReceiver.scheduleMidnightRefresh(context)
+    }
+
+    private fun buildViews(context: Context, appWidgetId: Int, snapshot: WidgetSnapshot): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.acta_widget)
+        val palette = snapshot.palette
+
+        // Header date & count
+        views.setTextViewText(R.id.acta_widget_title, snapshot.dateLabel)
+        if (snapshot.tasks.isNotEmpty()) {
+            views.setTextViewText(R.id.acta_widget_subtitle, snapshot.tasks.size.toString())
+            views.setViewVisibility(R.id.acta_widget_subtitle, View.VISIBLE)
+        } else {
+            views.setViewVisibility(R.id.acta_widget_subtitle, View.GONE)
+        }
+
+        // Empty state
+        views.setTextViewText(R.id.acta_widget_empty, "No tasks for today")
+        views.setViewVisibility(R.id.acta_widget_empty, if (snapshot.tasks.isEmpty()) View.VISIBLE else View.GONE)
+
+        // Palette colors
+        views.setInt(R.id.acta_widget_surface, "setColorFilter", palette.background)
+        views.setInt(R.id.acta_widget_band, "setColorFilter", palette.background)
+        views.setTextColor(R.id.acta_widget_title, palette.text)
+        views.setTextColor(R.id.acta_widget_subtitle, palette.mutedText)
+        views.setTextColor(R.id.acta_widget_capture, palette.accent)
+        views.setInt(R.id.acta_widget_header_divider, "setBackgroundColor", palette.border)
+        views.setTextColor(R.id.acta_widget_empty, palette.mutedText)
+
+        // Top-right '+' quick capture button
+        views.setOnClickPendingIntent(
+            R.id.acta_widget_capture,
+            capturePendingIntent(context, appWidgetId)
+        )
+
+        // Header & empty space open MainActivity
+        val openHomeIntent = PendingIntent.getActivity(
+            context,
+            REQUEST_HOME_BASE + appWidgetId,
+            appIntent(context),
+            immutableFlags()
+        )
+        views.setOnClickPendingIntent(R.id.acta_widget_title_target, openHomeIntent)
+        views.setOnClickPendingIntent(R.id.acta_widget_root, openHomeIntent)
+        views.setOnClickPendingIntent(R.id.acta_widget_empty, openHomeIntent)
+        views.setOnClickPendingIntent(R.id.acta_widget_spacer, openHomeIntent)
+
+        // Task list binding
+        bindCollection(context, views, appWidgetId, snapshot)
+        return views
+    }
+
+    internal fun usesDirectCollections(sdkInt: Int): Boolean = sdkInt >= 31
+
+    @TargetApi(31)
+    private fun bindDirectCollection(
+        context: Context,
+        views: RemoteViews,
+        appWidgetId: Int,
+        snapshot: WidgetSnapshot
+    ) {
+        val factory = TasksWidgetFactory(context, appWidgetId, snapshot)
+        val collection = buildDirectCollection(factory)
+        views.setRemoteAdapter(R.id.acta_widget_list, collection)
+    }
+
+    @TargetApi(31)
+    private fun buildDirectCollection(
+        factory: TasksWidgetFactory,
+        budgetBytes: Int = DIRECT_COLLECTION_BUDGET_BYTES
+    ): RemoteViews.RemoteCollectionItems {
+        val count = factory.count
+        fun buildForLimit(limit: Int): RemoteViews.RemoteCollectionItems {
+            val builder = RemoteViews.RemoteCollectionItems.Builder()
+                .setViewTypeCount(1)
+                .setHasStableIds(true)
+            for (i in 0 until limit) {
+                builder.addItem(factory.getItemId(i), factory.getViewAt(i, limit))
+            }
+            return builder.build()
+        }
+
+        val full = buildForLimit(count)
+        if (count == 0 || parcelSize(full) <= budgetBytes) return full
+
+        var low = 1
+        var high = count - 1
+        var best = buildForLimit(1)
+        while (low <= high) {
+            val mid = (low + high) ushr 1
+            val candidate = buildForLimit(mid)
+            if (parcelSize(candidate) <= budgetBytes) {
+                best = candidate
+                low = mid + 1
             } else {
-                val task = taskDao.getTaskById(taskId)
-                if (task != null) {
-                    taskDao.update(task.copy(isCompleted = !task.isCompleted))
-                }
+                high = mid - 1
             }
         }
-        TaskWidget().update(context, glanceId)
+        return best
     }
+
+    @TargetApi(31)
+    private fun parcelSize(collection: RemoteViews.RemoteCollectionItems): Int {
+        val parcel = Parcel.obtain()
+        return try {
+            collection.writeToParcel(parcel, 0)
+            parcel.dataSize()
+        } finally {
+            parcel.recycle()
+        }
+    }
+
+    private fun bindCollection(
+        context: Context,
+        views: RemoteViews,
+        appWidgetId: Int,
+        snapshot: WidgetSnapshot
+    ) {
+        if (usesDirectCollections(Build.VERSION.SDK_INT)) {
+            bindDirectCollection(context, views, appWidgetId, snapshot)
+        } else {
+            @Suppress("DEPRECATION")
+            val adapterIntent = Intent(context, TasksWidgetService::class.java).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+            }
+            @Suppress("DEPRECATION")
+            views.setRemoteAdapter(R.id.acta_widget_list, adapterIntent)
+        }
+        views.setEmptyView(R.id.acta_widget_list, R.id.acta_widget_empty)
+
+        val rowTemplate = Intent(context, WidgetTapActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val mutableFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+            (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0)
+        views.setPendingIntentTemplate(
+            R.id.acta_widget_list,
+            PendingIntent.getActivity(context, REQUEST_ROW, rowTemplate, mutableFlags)
+        )
+    }
+
+    internal fun capturePendingIntent(context: Context, appWidgetId: Int): PendingIntent {
+        val intent = Intent(context, QuickCaptureActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            data = Uri.parse("acta-widget://capture/$appWidgetId")
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        return PendingIntent.getActivity(context, REQUEST_CAPTURE + appWidgetId, intent, immutableFlags())
+    }
+
+    internal fun appIntent(context: Context, openTaskId: Int = -1): Intent =
+        Intent(context, MainActivity::class.java).apply {
+            if (openTaskId != -1) {
+                putExtra("open_task_id", openTaskId)
+            }
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+
+    private fun immutableFlags(): Int = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 }
 
-class ToggleSubTaskAction : ActionCallback {
-    override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
-        val subTaskId = parameters[ActionParameters.Key<Int>("subtask_id")] ?: return
-        val database = AppDatabase.getInstance(context)
-        val taskDao = database.taskDao()
-        val subTask = taskDao.getSubTaskById(subTaskId)
-        if (subTask != null) {
-            taskDao.updateSubTask(subTask.copy(isCompleted = !subTask.isCompleted))
+class TaskWidget {
+    fun updateAll(context: Context) {
+        WidgetRenderer.refreshAllAsync(context)
+    }
+
+    companion object {
+        fun updateAll(context: Context) {
+            WidgetRenderer.refreshAllAsync(context)
         }
-        TaskWidget().update(context, glanceId)
     }
 }

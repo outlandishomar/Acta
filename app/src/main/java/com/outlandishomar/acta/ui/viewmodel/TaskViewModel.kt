@@ -17,7 +17,6 @@ import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.Instant
-import androidx.glance.appwidget.updateAll
 import com.outlandishomar.acta.receiver.AlarmScheduler
 import com.outlandishomar.acta.ui.components.EditType
 
@@ -235,6 +234,7 @@ data class DayTasksState(
             if (alertEnabled) {
                 AlarmScheduler.scheduleTaskAlarm(getApplication(), task.copy(id = taskId))
             }
+            updateWidget()
         }
     }
 
@@ -292,6 +292,7 @@ data class DayTasksState(
             if (alertEnabled) {
                 AlarmScheduler.scheduleTaskAlarm(getApplication(), task.copy(id = taskId))
             }
+            updateWidget()
         }
     }
 
