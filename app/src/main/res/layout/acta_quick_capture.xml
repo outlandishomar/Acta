@@ -6,31 +6,10 @@
     android:background="@drawable/acta_dialog_surface"
     android:elevation="8dp"
     android:orientation="vertical"
-    android:padding="20dp">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/acta_quick_capture_title"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="New Task"
-            android:textColor="@color/acta_widget_text"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/acta_quick_capture_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/acta_widget_muted_text"
-            android:textSize="13sp" />
-    </LinearLayout>
+    android:paddingStart="22dp"
+    android:paddingEnd="22dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="14dp">
 
     <ScrollView
         android:id="@+id/acta_quick_capture_scroll"
@@ -48,45 +27,60 @@
                 android:id="@+id/acta_quick_capture_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:background="@drawable/acta_dialog_field"
+                android:background="@android:color/transparent"
+                android:fontFamily="sans-serif-medium"
                 android:gravity="top|start"
-                android:hint="Task name"
+                android:hint="What would you like to do?"
                 android:imeOptions="actionNext"
                 android:importantForAutofill="no"
                 android:inputType="textCapSentences|textAutoCorrect"
                 android:maxLength="500"
                 android:maxLines="3"
                 android:minLines="1"
-                android:padding="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="10dp"
                 android:textColor="@color/acta_widget_text"
                 android:textColorHint="@color/acta_widget_muted_text"
-                android:textSize="16sp" />
+                android:textSize="20sp" />
+
+            <View
+                android:id="@+id/acta_quick_capture_title_divider"
+                android:layout_width="match_parent"
+                android:layout_height="0.75dp"
+                android:background="@color/acta_widget_border" />
 
             <EditText
                 android:id="@+id/acta_quick_capture_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/acta_dialog_field"
+                android:layout_marginTop="10dp"
+                android:background="@android:color/transparent"
+                android:fontFamily="sans-serif"
                 android:gravity="top|start"
-                android:hint="Notes (optional)"
+                android:hint="notes"
                 android:importantForAutofill="no"
                 android:inputType="textMultiLine|textCapSentences|textAutoCorrect"
                 android:maxLines="5"
-                android:minLines="2"
-                android:padding="12dp"
-                android:textColor="@color/acta_widget_text"
+                android:minLines="1"
+                android:paddingTop="4dp"
+                android:paddingBottom="10dp"
+                android:textColor="@color/acta_widget_muted_text"
                 android:textColorHint="@color/acta_widget_muted_text"
-                android:textSize="14sp" />
+                android:textSize="16sp" />
+
+            <View
+                android:id="@+id/acta_quick_capture_notes_divider"
+                android:layout_width="match_parent"
+                android:layout_height="0.75dp"
+                android:background="@color/acta_widget_border" />
         </LinearLayout>
     </ScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="end|center_vertical"
+        android:layout_marginTop="14dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <Button
@@ -94,23 +88,28 @@
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="40dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="12dp"
             android:text="Cancel"
             android:textAllCaps="false"
-            android:textColor="@color/acta_widget_accent" />
+            android:textColor="@color/acta_widget_muted_text"
+            android:textSize="15sp" />
 
-        <Button
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageButton
             android:id="@+id/acta_quick_capture_save"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/acta_dialog_pill"
-            android:minWidth="88dp"
-            android:minHeight="44dp"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:text="Save"
-            android:textAllCaps="false"
-            android:textColor="@color/acta_widget_on_accent" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Done"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/acta_check_icon" />
     </LinearLayout>
 </LinearLayout>

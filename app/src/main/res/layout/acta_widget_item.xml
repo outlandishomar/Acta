@@ -6,29 +6,41 @@
     android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/acta_widget_item_inner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:minHeight="40dp"
+        android:minHeight="42dp"
         android:orientation="horizontal"
-        android:paddingTop="5dp"
-        android:paddingBottom="5dp">
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
 
         <FrameLayout
             android:id="@+id/acta_widget_item_ring_target"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="-11dp"
-            android:layout_marginEnd="1dp"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="-9dp"
+            android:layout_marginEnd="3dp"
             android:contentDescription="Complete task">
 
             <ImageView
-                android:id="@+id/acta_widget_item_priority"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:id="@+id/acta_widget_item_checkbox_box"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:layout_gravity="center"
                 android:importantForAccessibility="no"
-                android:src="@drawable/acta_widget_ring" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/acta_widget_checkbox_unchecked" />
+
+            <ImageView
+                android:id="@+id/acta_widget_item_checkbox_tick"
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:src="@drawable/acta_widget_checkmark"
+                android:visibility="gone" />
         </FrameLayout>
 
         <LinearLayout
@@ -44,7 +56,7 @@
                 android:ellipsize="end"
                 android:singleLine="true"
                 android:textColor="@color/acta_widget_text"
-                android:textSize="14sp" />
+                android:textSize="14.5sp" />
 
             <LinearLayout
                 android:id="@+id/acta_widget_item_context_row"
@@ -82,6 +94,6 @@
         android:id="@+id/acta_widget_item_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginStart="30dp"
+        android:layout_marginStart="32dp"
         android:background="@color/acta_widget_border" />
 </LinearLayout>

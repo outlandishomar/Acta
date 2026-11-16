@@ -2,6 +2,7 @@ package com.outlandishomar.acta.widget
 
 import android.app.Activity
 import android.content.Context
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
@@ -13,7 +14,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
+import android.widget.ImageButton
 import android.widget.Toast
 import com.outlandishomar.acta.R
 import com.outlandishomar.acta.data.isAnyHideTaskModeActive
@@ -24,14 +25,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class QuickCaptureActivity : Activity() {
     private lateinit var titleInput: EditText
     private lateinit var notesInput: EditText
-    private lateinit var saveButton: Button
+    private lateinit var saveButton: ImageButton
     private lateinit var cancelButton: Button
+    private lateinit var titleDivider: View
+    private lateinit var notesDivider: View
     private var isSaving = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,18 +44,15 @@ class QuickCaptureActivity : Activity() {
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         )
 
-        val headerTitle = findViewById<TextView>(R.id.acta_quick_capture_title)
-        val headerDate = findViewById<TextView>(R.id.acta_quick_capture_date)
         titleInput = findViewById(R.id.acta_quick_capture_input)
         notesInput = findViewById(R.id.acta_quick_capture_description)
+        titleDivider = findViewById(R.id.acta_quick_capture_title_divider)
+        notesDivider = findViewById(R.id.acta_quick_capture_notes_divider)
         cancelButton = findViewById(R.id.acta_quick_capture_cancel)
         saveButton = findViewById(R.id.acta_quick_capture_save)
 
-        val today = LocalDate.now()
-        headerDate.text = today.format(DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault()))
-
         val palette = WidgetPaletteResolver.resolve(this)
-        applyPalette(palette, headerTitle, headerDate)
+        applyPalette(palette)
 
         val watcher = object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -97,25 +95,29 @@ class QuickCaptureActivity : Activity() {
     private fun updateSaveState() {
         val canSave = !isSaving && titleInput.text?.toString()?.trim()?.isNotEmpty() == true
         saveButton.isEnabled = canSave
-        saveButton.alpha = if (canSave) 1f else 0.5f
+        saveButton.alpha = if (canSave) 1f else 0.35f
     }
 
-    private fun applyPalette(palette: WidgetPalette, title: TextView, dateView: TextView) {
-        tintDrawable(findViewById(R.id.acta_quick_capture_root), palette.background)
-        title.setTextColor(palette.text)
-        dateView.setTextColor(palette.mutedText)
+    private fun applyPalette(palette: WidgetPalette) {
+        tintDrawable(findViewById(R.id.acta_quick_capture_root), palette.dialogBackground)
 
         titleInput.setTextColor(palette.text)
-        titleInput.setHintTextColor(palette.mutedText)
-        tintDrawable(titleInput, palette.card)
+        titleInput.setHintTextColor(palette.hintText)
 
-        notesInput.setTextColor(palette.text)
-        notesInput.setHintTextColor(palette.mutedText)
-        tintDrawable(notesInput, palette.card)
+        notesInput.setTextColor(palette.mutedText)
+        notesInput.setHintTextColor(palette.hintText)
 
-        cancelButton.setTextColor(palette.accent)
-        tintDrawable(saveButton, palette.accent)
-        saveButton.setTextColor(palette.onAccent)
+        val subtleDivider = Color.argb(
+            64,
+            Color.red(palette.mutedText),
+            Color.green(palette.mutedText),
+            Color.blue(palette.mutedText)
+        )
+        titleDivider.setBackgroundColor(subtleDivider)
+        notesDivider.setBackgroundColor(subtleDivider)
+
+        cancelButton.setTextColor(palette.mutedText)
+        saveButton.setColorFilter(palette.accent)
     }
 
     private fun tintDrawable(view: View, color: Int) {

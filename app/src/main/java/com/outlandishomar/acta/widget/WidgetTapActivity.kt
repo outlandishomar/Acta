@@ -3,10 +3,6 @@ package com.outlandishomar.acta.widget
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
-import com.outlandishomar.acta.data.local.AppDatabase
-import com.outlandishomar.acta.data.model.TaskCompletion
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 
 class WidgetTapActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,34 +15,19 @@ class WidgetTapActivity : Activity() {
                 val repeatMode = data.getQueryParameter("repeatMode") ?: "ONCE"
                 val dateMillis = data.getQueryParameter("date")?.toLongOrNull() ?: -1L
                 if (taskId != -1) {
-                    // Instant optimistic checkoff so the widget removes the row immediately
-                    OptimisticCheckoffStore.markChecked(taskId)
-                    val appContext = applicationContext
-                    WidgetRenderer.WORKER.execute {
-                        runCatching {
-                            // Refresh immediately using optimistic state
-                            WidgetRenderer.refreshAll(appContext)
-                            // Persist completion to Room database
-                            runBlocking(Dispatchers.IO) {
-                                val taskDao = AppDatabase.getInstance(appContext).taskDao()
-                                if (repeatMode != "ONCE" && dateMillis != -1L) {
-                                    taskDao.insertCompletion(TaskCompletion(taskId, dateMillis))
-                                } else {
-                                    val task = taskDao.getTaskById(taskId)
-                                    if (task != null) {
-                                        taskDao.update(task.copy(isCompleted = true))
-                                    }
-                                }
-                            }
-                            OptimisticCheckoffStore.clear(taskId)
-                            WidgetRenderer.refreshAll(appContext)
-                        }
-                    }
+                    WidgetCheckoffAnimator.startCheckoff(
+                        context = applicationContext,
+                        taskId = taskId,
+                        repeatMode = repeatMode,
+                        dateMillis = dateMillis
+                    )
                 }
             }
             data.scheme == SCHEME && data.host == TASK_HOST -> {
                 val taskId = data.lastPathSegment?.toIntOrNull() ?: -1
-                startActivity(WidgetRenderer.appIntent(this, openTaskId = taskId))
+                if (!WidgetCheckoffAnimator.isAnimating(taskId)) {
+                    startActivity(WidgetRenderer.appIntent(this, openTaskId = taskId))
+                }
             }
         }
         finish()
