@@ -383,8 +383,8 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                     onUndo = viewModel::undoDelete,
                     onDismiss = viewModel::dismissUndo,
                     modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(start = 16.dp, bottom = 24.dp)
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 24.dp)
                 )
             }
         }

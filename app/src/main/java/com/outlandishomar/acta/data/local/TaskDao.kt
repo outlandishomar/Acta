@@ -20,6 +20,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isHighlighted = 1 AND isCompleted = 0 AND date < :todayMillis AND date != 0 ORDER BY orderIndex ASC, createdAt ASC")
     fun getPastUncompletedHighlightedTasks(todayMillis: Long): Flow<List<Task>>
 
+    @Query("UPDATE tasks SET date = :todayMillis WHERE isHighlighted = 1 AND isCompleted = 0 AND date < :todayMillis AND date != 0")
+    suspend fun rollOverPastUnscheduledTasks(todayMillis: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCompletion(completion: TaskCompletion)
 
@@ -98,6 +101,9 @@ interface TaskDao {
 
     @Query("SELECT * FROM sub_task_completions WHERE dateMillis = :dateMillis")
     fun getSubTaskCompletionsForDate(dateMillis: Long): Flow<List<SubTaskCompletion>>
+
+    @Query("SELECT * FROM sub_task_completions WHERE dateMillis = :dateMillis")
+    suspend fun getSubTaskCompletionsForDateNow(dateMillis: Long): List<SubTaskCompletion>
 
     @Query("DELETE FROM sub_task_completions WHERE subTaskId = :subTaskId")
     suspend fun deleteAllCompletionsForSubTask(subTaskId: Int)

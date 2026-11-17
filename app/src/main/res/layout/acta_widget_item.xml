@@ -3,24 +3,27 @@
     android:id="@+id/acta_widget_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layoutDirection="ltr"
     android:orientation="vertical">
 
+    <!-- Main Title Row -->
     <LinearLayout
         android:id="@+id/acta_widget_item_inner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:minHeight="42dp"
+        android:layoutDirection="ltr"
+        android:minHeight="36dp"
         android:orientation="horizontal"
         android:paddingTop="6dp"
-        android:paddingBottom="6dp">
+        android:paddingBottom="2dp">
 
         <FrameLayout
             android:id="@+id/acta_widget_item_ring_target"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:layout_marginStart="-9dp"
-            android:layout_marginEnd="3dp"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="-4dp"
+            android:layout_marginEnd="8dp"
             android:contentDescription="Complete task">
 
             <ImageView
@@ -47,35 +50,20 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:gravity="left|center_vertical"
+            android:layoutDirection="ltr"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/acta_widget_item_title"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:gravity="left|center_vertical"
                 android:singleLine="true"
+                android:textAlignment="gravity"
                 android:textColor="@color/acta_widget_text"
                 android:textSize="14.5sp" />
-
-            <LinearLayout
-                android:id="@+id/acta_widget_item_context_row"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/acta_widget_item_context"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:singleLine="true"
-                    android:textColor="@color/acta_widget_muted_text"
-                    android:textSize="12sp" />
-            </LinearLayout>
         </LinearLayout>
 
         <TextView
@@ -89,6 +77,83 @@
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
+
+    <!-- Notes Row (1-line text OR notes icon, with optional vertical tree stem at x=10dp) -->
+    <LinearLayout
+        android:id="@+id/acta_widget_item_context_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layoutDirection="ltr"
+        android:minHeight="22dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:layout_width="20dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="12dp">
+
+            <FrameLayout
+                android:id="@+id/acta_widget_item_notes_stem"
+                android:layout_width="1.2dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:background="@color/acta_widget_muted_text"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/acta_widget_item_notes_icon"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_marginTop="1dp"
+            android:layout_marginBottom="3dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/acta_widget_notes_icon"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="left|center_vertical"
+            android:layoutDirection="ltr"
+            android:orientation="horizontal"
+            android:paddingBottom="3dp">
+
+            <TextView
+                android:id="@+id/acta_widget_item_context"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="left|center_vertical"
+                android:singleLine="true"
+                android:textAlignment="gravity"
+                android:textColor="@color/acta_widget_muted_text"
+                android:textSize="12.5sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Short Bottom Spacer / Bridge to Subtasks or Divider -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layoutDirection="ltr">
+
+        <FrameLayout
+            android:layout_width="20dp"
+            android:layout_height="match_parent">
+
+            <FrameLayout
+                android:id="@+id/acta_widget_item_bottom_stem"
+                android:layout_width="1.2dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_horizontal"
+                android:background="@color/acta_widget_muted_text"
+                android:visibility="gone" />
+        </FrameLayout>
+    </FrameLayout>
 
     <FrameLayout
         android:id="@+id/acta_widget_item_divider"

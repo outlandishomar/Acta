@@ -30,24 +30,34 @@ import java.util.concurrent.Executors
 
 data class WidgetPalette(
     val background: Int,
-    val dialogBackground: Int,
     val card: Int,
     val text: Int,
     val mutedText: Int,
+    val faintNotesText: Int,
     val hintText: Int,
+    val disabledText: Int,
     val checkboxBorder: Int,
     val accent: Int,
     val onAccent: Int,
     val border: Int
 )
 
+data class WidgetSubTaskItem(
+    val id: Int,
+    val taskId: Int,
+    val title: String,
+    val isCompleted: Boolean
+)
+
 data class WidgetTaskItem(
     val id: Int,
     val title: String,
     val notesPreview: String?,
+    val showNotesIconOnly: Boolean,
     val timeLabel: String?,
     val repeatMode: String,
-    val dateMillis: Long
+    val dateMillis: Long,
+    val subTasks: List<WidgetSubTaskItem>
 )
 
 data class WidgetSnapshot(
@@ -58,6 +68,7 @@ data class WidgetSnapshot(
 
 object OptimisticCheckoffStore {
     private val checkedTimestamps = ConcurrentHashMap<Int, Long>()
+    private val subTaskOverrides = ConcurrentHashMap<Int, Pair<Boolean, Long>>()
     private const val TTL_MS = 10_000L
 
     fun markChecked(taskId: Int) {
@@ -75,6 +86,23 @@ object OptimisticCheckoffStore {
             return false
         }
         return true
+    }
+
+    fun setSubTaskOverride(subTaskId: Int, isCompleted: Boolean) {
+        subTaskOverrides[subTaskId] = isCompleted to System.currentTimeMillis()
+    }
+
+    fun clearSubTaskOverride(subTaskId: Int) {
+        subTaskOverrides.remove(subTaskId)
+    }
+
+    fun getSubTaskOverride(subTaskId: Int): Boolean? {
+        val pair = subTaskOverrides[subTaskId] ?: return null
+        if (System.currentTimeMillis() - pair.second > TTL_MS) {
+            subTaskOverrides.remove(subTaskId)
+            return null
+        }
+        return pair.first
     }
 }
 
@@ -130,11 +158,12 @@ object WidgetPaletteResolver {
                 val muted = Color.parseColor("#AAAAAA")
                 WidgetPalette(
                     background = customPrimary,
-                    dialogBackground = customPrimary,
                     card = blend(customPrimary, Color.WHITE, 0.12f),
                     text = Color.WHITE,
                     mutedText = muted,
+                    faintNotesText = withAlpha(muted, 155),
                     hintText = withAlpha(muted, 128),
+                    disabledText = Color.parseColor("#757575"),
                     checkboxBorder = muted,
                     accent = accent,
                     onAccent = onAccent,
@@ -149,11 +178,12 @@ object WidgetPaletteResolver {
                 val muted = Color.parseColor("#555555")
                 WidgetPalette(
                     background = customPrimary,
-                    dialogBackground = customPrimary,
                     card = card,
                     text = text,
                     mutedText = muted,
+                    faintNotesText = withAlpha(muted, 155),
                     hintText = withAlpha(muted, 128),
+                    disabledText = Color.parseColor("#888888"),
                     checkboxBorder = text,
                     accent = accent,
                     onAccent = onAccent,
@@ -170,11 +200,12 @@ object WidgetPaletteResolver {
                 val muted = Color.parseColor("#5A4341")
                 WidgetPalette(
                     background = Color.parseColor("#C89F9C"),
-                    dialogBackground = Color.parseColor("#C89F9C"),
                     card = Color.parseColor("#D8B2AF"),
                     text = text,
                     mutedText = muted,
+                    faintNotesText = withAlpha(muted, 155),
                     hintText = withAlpha(muted, 128),
+                    disabledText = Color.parseColor("#8A6E6C"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#1E1E1E"),
                     onAccent = Color.parseColor("#DFC0BD"),
@@ -186,11 +217,12 @@ object WidgetPaletteResolver {
                 val muted = Color.parseColor("#757575")
                 WidgetPalette(
                     background = Color.parseColor("#D1D1D1"),
-                    dialogBackground = Color.parseColor("#D1D1D1"),
                     card = Color.parseColor("#DCDCE0"),
                     text = text,
                     mutedText = muted,
+                    faintNotesText = withAlpha(muted, 155),
                     hintText = withAlpha(muted, 128),
+                    disabledText = Color.parseColor("#BDBDBD"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#1E1E1E"),
                     onAccent = Color.parseColor("#FAFAFA"),
@@ -202,11 +234,12 @@ object WidgetPaletteResolver {
                 val muted = Color.parseColor("#4F575B")
                 WidgetPalette(
                     background = Color.parseColor("#B0BBBF"),
-                    dialogBackground = Color.parseColor("#B0BBBF"),
                     card = Color.parseColor("#C0CBCE"),
                     text = text,
                     mutedText = muted,
+                    faintNotesText = withAlpha(muted, 155),
                     hintText = withAlpha(muted, 128),
+                    disabledText = Color.parseColor("#7C8589"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#212121"),
                     onAccent = Color.parseColor("#CCD6D9"),
@@ -218,11 +251,12 @@ object WidgetPaletteResolver {
                 val muted = Color.parseColor("#4A4D43")
                 WidgetPalette(
                     background = Color.parseColor("#A1A499"),
-                    dialogBackground = Color.parseColor("#A1A499"),
                     card = Color.parseColor("#B1B4A9"),
                     text = text,
                     mutedText = muted,
+                    faintNotesText = withAlpha(muted, 155),
                     hintText = withAlpha(muted, 128),
+                    disabledText = Color.parseColor("#75786E"),
                     checkboxBorder = text,
                     accent = Color.parseColor("#212121"),
                     onAccent = Color.parseColor("#BDBFA6"),
@@ -239,11 +273,12 @@ object WidgetPaletteResolver {
         val muted = Color.parseColor("#AEAEB2")
         return WidgetPalette(
             background = Color.parseColor("#1C1C1E"),
-            dialogBackground = Color.parseColor("#343436"),
             card = Color.parseColor("#2C2C2E"),
             text = Color.parseColor("#F2F2F7"),
             mutedText = muted,
+            faintNotesText = withAlpha(muted, 155),
             hintText = withAlpha(muted, 128),
+            disabledText = Color.parseColor("#757575"),
             checkboxBorder = muted,
             accent = Color.parseColor("#E0E0E0"),
             onAccent = Color.parseColor("#1C1C1E"),
@@ -256,11 +291,12 @@ object WidgetPaletteResolver {
         val muted = Color.parseColor("#6E6462")
         return WidgetPalette(
             background = Color.parseColor("#EEE2DF"),
-            dialogBackground = Color.parseColor("#EEE2DF"),
             card = Color.parseColor("#F8EFEF"),
             text = text,
             mutedText = muted,
+            faintNotesText = withAlpha(muted, 155),
             hintText = withAlpha(muted, 128),
+            disabledText = Color.parseColor("#A09694"),
             checkboxBorder = text,
             accent = Color.parseColor("#212121"),
             onAccent = Color.parseColor("#FAF3F3"),
@@ -271,6 +307,7 @@ object WidgetPaletteResolver {
 
 object WidgetTaskLoader {
     private val DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE, MMM d", Locale.getDefault())
+    private const val SINGLE_LINE_NOTES_MAX_CHARS = 42
 
     fun loadSnapshot(context: Context): WidgetSnapshot = runBlocking(Dispatchers.IO) {
         val today = LocalDate.now()
@@ -311,11 +348,36 @@ object WidgetTaskLoader {
             .filter { !it.isCompleted && !OptimisticCheckoffStore.isChecked(it.id) }
             .sortedWith(compareBy({ it.orderIndex }, { it.createdAt }))
 
+        val taskIds = resolvedTasks.map { it.id }
+        val repeatingTaskIds = resolvedTasks.filter { it.repeatMode != "ONCE" }.map { it.id }.toSet()
+        val rawSubTasks = if (taskIds.isNotEmpty()) taskDao.getSubTasksForTasksNow(taskIds) else emptyList()
+        val subCompletions = if (taskIds.isNotEmpty()) taskDao.getSubTaskCompletionsForDateNow(dateMillis) else emptyList()
+        val subCompletionIds = subCompletions.map { it.subTaskId }.toSet()
+
+        val subTasksByTask = rawSubTasks.map { sub ->
+            val dbDone = if (repeatingTaskIds.contains(sub.taskId)) {
+                subCompletionIds.contains(sub.id)
+            } else {
+                sub.isCompleted
+            }
+            val effectiveDone = OptimisticCheckoffStore.getSubTaskOverride(sub.id) ?: dbDone
+            WidgetSubTaskItem(
+                id = sub.id,
+                taskId = sub.taskId,
+                title = sub.title,
+                isCompleted = effectiveDone
+            )
+        }.groupBy { it.taskId }
+
         val items = resolvedTasks.map { task ->
-            val plainNotes = RichTextHelper.parseToRichSpans(task.description).first
-                .lineSequence()
-                .map { it.trim() }
-                .firstOrNull { it.isNotEmpty() }
+            val rawPlainNotes = RichTextHelper.parseToRichSpans(task.description).first.trim()
+            val nonBlankLines = rawPlainNotes.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            val hasNotes = nonBlankLines.isNotEmpty()
+            val isMultiLineNotes = nonBlankLines.size > 1 || (nonBlankLines.firstOrNull()?.length ?: 0) > SINGLE_LINE_NOTES_MAX_CHARS
+
+            val notesPreview = if (hasNotes && !isMultiLineNotes) nonBlankLines.first() else null
+            val showNotesIconOnly = hasNotes && isMultiLineNotes
+
             val timeLabel = if (task.taskTimeHour != null && task.taskTimeMinute != null) {
                 val h = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
                 val ap = if (task.taskTimeHour < 12) "AM" else "PM"
@@ -326,10 +388,12 @@ object WidgetTaskLoader {
             WidgetTaskItem(
                 id = task.id,
                 title = task.title,
-                notesPreview = plainNotes,
+                notesPreview = notesPreview,
+                showNotesIconOnly = showNotesIconOnly,
                 timeLabel = timeLabel,
                 repeatMode = task.repeatMode,
-                dateMillis = dateMillis
+                dateMillis = dateMillis,
+                subTasks = subTasksByTask[task.id] ?: emptyList()
             )
         }
 
@@ -443,7 +507,7 @@ object WidgetRenderer {
         val count = factory.count
         fun buildForLimit(limit: Int): RemoteViews.RemoteCollectionItems {
             val builder = RemoteViews.RemoteCollectionItems.Builder()
-                .setViewTypeCount(1)
+                .setViewTypeCount(factory.viewTypeCount)
                 .setHasStableIds(true)
             for (i in 0 until limit) {
                 builder.addItem(factory.getItemId(i), factory.getViewAt(i, limit))

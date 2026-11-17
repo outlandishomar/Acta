@@ -117,6 +117,15 @@
             android:launchMode="singleTask"
             android:windowSoftInputMode="stateVisible|adjustResize" />
 
+        <!-- Widget Task Peek Pop-up Activity -->
+        <activity
+            android:name=".widget.TaskPeekActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Acta.QuickCapture"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="" />
+
         <!-- Widget Invisible Tap Handler Activity -->
         <activity
             android:name=".widget.WidgetTapActivity"

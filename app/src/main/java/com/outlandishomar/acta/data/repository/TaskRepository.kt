@@ -60,6 +60,10 @@ class TaskRepository(private val taskDao: TaskDao) {
         return taskDao.getPastUncompletedHighlightedTasks(todayMillis)
     }
 
+    suspend fun rollOverPastUnscheduledTasks(todayMillis: Long) {
+        taskDao.rollOverPastUnscheduledTasks(todayMillis)
+    }
+
     suspend fun saveTaskOrdersForDate(orders: List<com.outlandishomar.acta.data.model.TaskOrder>) {
         if (orders.isNotEmpty()) {
             taskDao.insertTaskOrders(orders)

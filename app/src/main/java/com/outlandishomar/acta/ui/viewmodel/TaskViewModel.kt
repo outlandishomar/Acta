@@ -90,7 +90,13 @@ data class DayTasksState(
     val dayTasksState: StateFlow<DayTasksState> = _selectedDate
         .flatMapLatest { date ->
             val dayMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
             val isToday = (date == LocalDate.now())
+            if (isToday) {
+                viewModelScope.launch {
+                    repository.rollOverPastUnscheduledTasks(todayMillis)
+                }
+            }
             val pastHighlightedFlow = if (isToday) {
                 repository.getPastUncompletedHighlightedTasks(dayMillis)
             } else {
@@ -324,8 +330,13 @@ data class DayTasksState(
             // For recurring tasks, store completion status for the specific projected date
             repository.setTaskCompletionForDate(task.id, task.date, !task.isCompleted)
         } else {
-            // For one-time tasks, simply toggle the DB column
-            repository.toggleComplete(task)
+            val selectedDayMillis = _selectedDate.value.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            val targetTask = if (task.isHighlighted && !task.isCompleted && task.date < selectedDayMillis && task.date != 0L) {
+                task.copy(date = selectedDayMillis)
+            } else {
+                task
+            }
+            repository.toggleComplete(targetTask)
         }
         updateWidget()
     }
@@ -606,7 +617,7 @@ data class DayTasksState(
                 currentRegularTasks.size
             }
 
-            val movedTask = task.copy(isHighlighted = false)
+            val movedTask = task.copy(date = dateMillis, isHighlighted = false)
             currentRegularTasks.add(insertAt, movedTask)
 
             val ordersToSave = mutableListOf<com.outlandishomar.acta.data.model.TaskOrder>()
@@ -615,7 +626,7 @@ data class DayTasksState(
             currentRegularTasks.forEachIndexed { index, t ->
                 ordersToSave.add(com.outlandishomar.acta.data.model.TaskOrder(taskId = t.id, dateMillis = dateMillis, orderIndex = index))
                 if (t.id == task.id) {
-                    singleTasksToUpdate.add(t.copy(isHighlighted = false, orderIndex = index))
+                    singleTasksToUpdate.add(t.copy(date = dateMillis, isHighlighted = false, orderIndex = index))
                 } else if (t.repeatMode == "ONCE") {
                     singleTasksToUpdate.add(t.copy(orderIndex = index))
                 }
