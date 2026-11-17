@@ -91,14 +91,6 @@ private val usedLibraries = listOf(
         licenseUrl = "https://www.apache.org/licenses/LICENSE-2.0.txt"
     ),
     UsedLibrary(
-        name = "Jetpack Glance",
-        version = "1.1.1",
-        dependency = "androidx.glance:glance-appwidget:1.1.1",
-        url = "https://developer.android.com/jetpack/androidx/releases/glance",
-        licenseName = "The Apache Software License, Version 2.0",
-        licenseUrl = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-    ),
-    UsedLibrary(
         name = "Calvin Reorderable",
         version = "2.4.1",
         dependency = "sh.calvin.reorderable:reorderable:2.4.1",
