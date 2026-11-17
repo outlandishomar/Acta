@@ -1,5 +1,6 @@
 package com.outlandishomar.acta.widget
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Color
@@ -9,7 +10,9 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -34,6 +37,11 @@ import java.time.ZoneId
 import kotlin.math.roundToInt
 
 class QuickCaptureActivity : Activity() {
+    private data class SubtaskRowHolder(
+        val row: LinearLayout,
+        val input: EditText
+    )
+
     private lateinit var scrollView: ScrollView
     private lateinit var titleInput: EditText
     private lateinit var notesInput: EditText
@@ -44,7 +52,7 @@ class QuickCaptureActivity : Activity() {
     private lateinit var addSubtaskButton: ImageButton
     private lateinit var saveButton: ImageButton
     private lateinit var palette: WidgetPalette
-    private val subtaskInputs = mutableListOf<EditText>()
+    private val subtaskRows = mutableListOf<SubtaskRowHolder>()
     private var isSaving = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,6 +120,7 @@ class QuickCaptureActivity : Activity() {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun addSubTaskRow() {
         subtasksSection.visibility = View.VISIBLE
 
@@ -129,9 +138,12 @@ class QuickCaptureActivity : Activity() {
         }
 
         val dragIcon = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(dp(20f), dp(20f)).apply {
-                marginEnd = dp(10f)
+            layoutParams = LinearLayout.LayoutParams(dp(32f), dp(46f)).apply {
+                marginStart = dp(-4f)
+                marginEnd = dp(4f)
             }
+            setPadding(dp(6f), dp(13f), dp(6f), dp(13f))
+            scaleType = ImageView.ScaleType.FIT_CENTER
             setImageResource(R.drawable.acta_drag_handle_icon)
             setColorFilter(
                 Color.argb(
@@ -141,6 +153,7 @@ class QuickCaptureActivity : Activity() {
                     Color.blue(palette.mutedText)
                 )
             )
+            contentDescription = "Reorder subtask"
         }
 
         val unfocusedBorderColor = palette.border
@@ -171,6 +184,8 @@ class QuickCaptureActivity : Activity() {
             }
         }
 
+        val holder = SubtaskRowHolder(row = row, input = subInput)
+
         val deleteBtn = ImageButton(this).apply {
             layoutParams = LinearLayout.LayoutParams(dp(34f), dp(34f)).apply {
                 marginStart = dp(4f)
@@ -183,19 +198,21 @@ class QuickCaptureActivity : Activity() {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             contentDescription = "Remove subtask"
             setOnClickListener {
-                subtaskInputs.remove(subInput)
+                subtaskRows.remove(holder)
                 subtasksContainer.removeView(row)
-                if (subtaskInputs.isEmpty()) {
+                if (subtaskRows.isEmpty()) {
                     subtasksSection.visibility = View.GONE
                 }
             }
         }
 
+        setupDragHandle(dragIcon, holder)
+
         row.addView(dragIcon)
         row.addView(subInput)
         row.addView(deleteBtn)
 
-        subtaskInputs.add(subInput)
+        subtaskRows.add(holder)
         subtasksContainer.addView(row)
 
         subInput.requestFocus()
@@ -207,6 +224,150 @@ class QuickCaptureActivity : Activity() {
         }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupDragHandle(dragHandle: View, holder: SubtaskRowHolder) {
+        var startRawY = 0f
+        var draggedStartIndex = -1
+        var currentTargetIndex = -1
+        var stepHeight = 0f
+        val targetShifts = HashMap<View, Float>()
+
+        dragHandle.setOnTouchListener { _, event ->
+            if (subtaskRows.size <= 1) return@setOnTouchListener false
+            val draggedRow = holder.row
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    draggedStartIndex = subtaskRows.indexOf(holder)
+                    if (draggedStartIndex == -1) return@setOnTouchListener false
+                    currentTargetIndex = draggedStartIndex
+                    startRawY = event.rawY
+                    val lp = draggedRow.layoutParams as? ViewGroup.MarginLayoutParams
+                    stepHeight = (draggedRow.height + (lp?.topMargin ?: 0) + (lp?.bottomMargin ?: 0)).toFloat()
+                    targetShifts.clear()
+
+                    scrollView.requestDisallowInterceptTouchEvent(true)
+                    draggedRow.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    draggedRow.translationZ = dp(6f).toFloat()
+                    draggedRow.scaleX = 1.02f
+                    draggedRow.scaleY = 1.02f
+                    draggedRow.alpha = 0.94f
+                    true
+                }
+
+                MotionEvent.ACTION_MOVE -> {
+                    if (draggedStartIndex == -1) return@setOnTouchListener false
+                    val rawDy = event.rawY - startRawY
+                    val minDy = -draggedRow.top.toFloat()
+                    val maxDy = (subtasksContainer.height - draggedRow.bottom).toFloat()
+                    val clampedDy = rawDy.coerceIn(minMost(minDy, 0f), maxMost(maxDy, 0f))
+                    draggedRow.translationY = clampedDy
+
+                    val draggedCenterY = draggedRow.top + draggedRow.height / 2f + clampedDy
+                    var newTarget = draggedStartIndex
+
+                    if (clampedDy < 0f) {
+                        for (i in 0 until draggedStartIndex) {
+                            val other = subtaskRows[i].row
+                            val otherCenterY = other.top + other.height / 2f
+                            if (draggedCenterY < otherCenterY) {
+                                newTarget = minOf(newTarget, i)
+                            }
+                        }
+                    } else if (clampedDy > 0f) {
+                        for (i in (draggedStartIndex + 1) until subtaskRows.size) {
+                            val other = subtaskRows[i].row
+                            val otherCenterY = other.top + other.height / 2f
+                            if (draggedCenterY > otherCenterY) {
+                                newTarget = maxOf(newTarget, i)
+                            }
+                        }
+                    }
+
+                    if (newTarget != currentTargetIndex) {
+                        currentTargetIndex = newTarget
+                        draggedRow.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
+                    }
+
+                    for (i in subtaskRows.indices) {
+                        if (i == draggedStartIndex) continue
+                        val otherRow = subtaskRows[i].row
+                        val desiredShift = when {
+                            draggedStartIndex < currentTargetIndex && i in (draggedStartIndex + 1)..currentTargetIndex -> -stepHeight
+                            currentTargetIndex < draggedStartIndex && i in currentTargetIndex until draggedStartIndex -> stepHeight
+                            else -> 0f
+                        }
+                        if (targetShifts[otherRow] != desiredShift) {
+                            targetShifts[otherRow] = desiredShift
+                            otherRow.animate()
+                                .translationY(desiredShift)
+                                .setDuration(140)
+                                .start()
+                        }
+                    }
+                    true
+                }
+
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (draggedStartIndex == -1) return@setOnTouchListener false
+                    scrollView.requestDisallowInterceptTouchEvent(false)
+
+                    val focusedOldIndex = subtaskRows.indexOfFirst { it.input.hasFocus() }
+                    val selStart = if (focusedOldIndex != -1) {
+                        subtaskRows[focusedOldIndex].input.selectionStart.coerceAtLeast(0)
+                    } else {
+                        0
+                    }
+
+                    for (item in subtaskRows) {
+                        item.row.animate().cancel()
+                        item.row.translationY = 0f
+                        item.row.translationZ = 0f
+                        item.row.scaleX = 1f
+                        item.row.scaleY = 1f
+                        item.row.alpha = 1f
+                    }
+
+                    if (currentTargetIndex in subtaskRows.indices && currentTargetIndex != draggedStartIndex) {
+                        val texts = subtaskRows.map { it.input.text?.toString().orEmpty() }.toMutableList()
+                        val movedText = texts.removeAt(draggedStartIndex)
+                        texts.add(currentTargetIndex, movedText)
+
+                        for (i in subtaskRows.indices) {
+                            val edit = subtaskRows[i].input
+                            if (edit.text?.toString() != texts[i]) {
+                                edit.setText(texts[i])
+                            }
+                        }
+
+                        val newFocusedIndex = when {
+                            focusedOldIndex == draggedStartIndex -> currentTargetIndex
+                            draggedStartIndex < currentTargetIndex && focusedOldIndex in (draggedStartIndex + 1)..currentTargetIndex -> focusedOldIndex - 1
+                            currentTargetIndex < draggedStartIndex && focusedOldIndex in currentTargetIndex until draggedStartIndex -> focusedOldIndex + 1
+                            else -> focusedOldIndex
+                        }
+                        if (newFocusedIndex in subtaskRows.indices) {
+                            val targetInput = subtaskRows[newFocusedIndex].input
+                            targetInput.requestFocus()
+                            val len = targetInput.text?.length ?: 0
+                            targetInput.setSelection(selStart.coerceIn(0, len))
+                        }
+                    }
+
+                    draggedStartIndex = -1
+                    currentTargetIndex = -1
+                    targetShifts.clear()
+                    true
+                }
+
+                else -> false
+            }
+        }
+    }
+
+    private fun minMost(a: Float, b: Float): Float = if (a < b) a else b
+    private fun maxMost(a: Float, b: Float): Float = if (a > b) a else b
+
     private fun updateSaveState() {
         val hasTitle = titleInput.text?.toString()?.trim()?.isNotEmpty() == true
         saveButton.isEnabled = !isSaving
@@ -214,7 +375,6 @@ class QuickCaptureActivity : Activity() {
     }
 
     private fun applyPalette(palette: WidgetPalette) {
-        // Use the exact same background color as the widget
         tintDrawable(findViewById(R.id.acta_quick_capture_root), palette.background)
 
         titleInput.setTextColor(palette.text)
@@ -242,8 +402,8 @@ class QuickCaptureActivity : Activity() {
             return
         }
         val notes = notesInput.text?.toString()?.trim().orEmpty()
-        val subTaskTitles = subtaskInputs
-            .map { it.text?.toString()?.trim().orEmpty() }
+        val subTaskTitles = subtaskRows
+            .map { it.input.text?.toString()?.trim().orEmpty() }
             .filter { it.isNotEmpty() }
 
         isSaving = true
