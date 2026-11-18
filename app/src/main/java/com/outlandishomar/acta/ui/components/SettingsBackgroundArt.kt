@@ -3,6 +3,7 @@ package com.outlandishomar.acta.ui.components
 import android.content.Context
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +52,11 @@ private data class ArtLayoutConfig(
     val alignment: Alignment = Alignment.BottomCenter,
     val offsetY: Dp = 22.dp,
     val trimBlankColumns: Boolean = false,
-    val fadeBottomStart: Float = 0.78f
+    val fadeTopEnd: Float = 0f,
+    val fadeBottomStart: Float = 0.78f,
+    val fadeHorizontal: Float = 0f,
+    val fullBleedTop: Boolean = false,
+    val repeatFirstLineCount: Int = 0
 )
 
 private val NEW_ART_LAYOUT_OVERRIDES = mapOf(
@@ -94,6 +99,58 @@ private val NEW_ART_LAYOUT_OVERRIDES = mapOf(
         offsetY = 8.dp,
         trimBlankColumns = false,
         fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_dead_space to ArtLayoutConfig(
+        widthFraction = 1.05f,
+        heightFraction = 0.99f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 6.dp,
+        trimBlankColumns = false,
+        fadeBottomStart = 0.94f,
+        fullBleedTop = true,
+        repeatFirstLineCount = 35
+    ),
+    R.string.ascii_assassins_creed to ArtLayoutConfig(
+        widthFraction = 0.88f,
+        heightFraction = 0.56f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = true,
+        fadeTopEnd = 0.14f,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_kevin_hart_cat to ArtLayoutConfig(
+        widthFraction = 0.78f,
+        heightFraction = 0.45f,
+        alignment = Alignment.BottomEnd,
+        offsetY = 6.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_nokias_bond to ArtLayoutConfig(
+        widthFraction = 0.94f,
+        heightFraction = 0.19f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f,
+        fadeHorizontal = 0.14f
+    ),
+    R.string.ascii_scarface to ArtLayoutConfig(
+        widthFraction = 0.76f,
+        heightFraction = 0.46f,
+        alignment = Alignment.BottomStart,
+        offsetY = 6.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_akira to ArtLayoutConfig(
+        widthFraction = 0.84f,
+        heightFraction = 0.36f,
+        alignment = Alignment.BottomCenter,
+        offsetY = (-95).dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
     )
 )
 
@@ -125,12 +182,23 @@ val SETTINGS_BACKGROUND_ART_OPTIONS = listOf(
     BackgroundArtOption(R.string.ascii_kill_bill, "Kill Bill"),
     BackgroundArtOption(R.string.ascii_se7en, "Se7en"),
     BackgroundArtOption(R.string.ascii_the_thing, "The Thing"),
-    BackgroundArtOption(R.string.ascii_spiderman_3, "Spider-Man 3")
+    BackgroundArtOption(R.string.ascii_spiderman_3, "Spider-Man 3"),
+    BackgroundArtOption(R.string.ascii_dead_space, "Dead Space"),
+    BackgroundArtOption(R.string.ascii_assassins_creed, "Assassin's Creed"),
+    BackgroundArtOption(R.string.ascii_kevin_hart_cat, "Kevin Hart Cat"),
+    BackgroundArtOption(R.string.ascii_nokias_bond, "Nokia's Bond"),
+    BackgroundArtOption(R.string.ascii_scarface, "Scarface"),
+    BackgroundArtOption(R.string.ascii_akira, "Akira")
 )
 
 object SessionBackgroundArt {
     private var cachedArtResId: Int? = null
     var manualOverrideResId by mutableStateOf<Int?>(null)
+
+    fun isFullBleedTop(context: Context): Boolean {
+        val resId = manualOverrideResId ?: getForSession(context)
+        return NEW_ART_LAYOUT_OVERRIDES[resId]?.fullBleedTop == true
+    }
 
     fun getForSession(context: Context): Int {
         manualOverrideResId?.let { return it }
@@ -158,8 +226,20 @@ fun SettingsBackgroundArt(modifier: Modifier = Modifier) {
     val artResId = overrideResId ?: remember(context) { SessionBackgroundArt.getForSession(context) }
     val rawArtText = stringResource(id = artResId).trimStart('\n').trimEnd('\n', ' ')
     val layout = NEW_ART_LAYOUT_OVERRIDES[artResId] ?: ArtLayoutConfig()
-    val displayText = remember(rawArtText, layout.trimBlankColumns) {
-        if (layout.trimBlankColumns) trimHorizontalBlankColumns(rawArtText) else rawArtText
+    val displayText = remember(rawArtText, layout.trimBlankColumns, layout.repeatFirstLineCount) {
+        val extended = if (layout.repeatFirstLineCount > 0) {
+            val firstLine = rawArtText.substringBefore('\n')
+            val prefix = buildString {
+                repeat(layout.repeatFirstLineCount) {
+                    append(firstLine)
+                    append('\n')
+                }
+            }
+            prefix + rawArtText
+        } else {
+            rawArtText
+        }
+        if (layout.trimBlankColumns) trimHorizontalBlankColumns(extended) else extended
     }
 
     val isDark = ThemeState.isThemeDark
@@ -216,10 +296,10 @@ fun SettingsBackgroundArt(modifier: Modifier = Modifier) {
         val lineHeight = sizing.second
         val extraScaleY = sizing.third
 
-        val horizontalWrapAlign = if (layout.alignment == Alignment.BottomEnd) {
-            Alignment.End
-        } else {
-            Alignment.CenterHorizontally
+        val horizontalWrapAlign = when (layout.alignment) {
+            Alignment.BottomEnd -> Alignment.End
+            Alignment.BottomStart -> Alignment.Start
+            else -> Alignment.CenterHorizontally
         }
 
         val textStyle = if (layout.heightFraction > 0f) {
@@ -248,25 +328,51 @@ fun SettingsBackgroundArt(modifier: Modifier = Modifier) {
             overflow = TextOverflow.Clip,
             modifier = Modifier
                 .wrapContentWidth(align = horizontalWrapAlign, unbounded = true)
+                .wrapContentHeight(align = Alignment.Bottom, unbounded = true)
                 .offset(y = layout.offsetY)
                 .graphicsLayer(
                     compositingStrategy = CompositingStrategy.Offscreen,
                     scaleY = extraScaleY,
                     transformOrigin = TransformOrigin(
-                        pivotFractionX = if (layout.alignment == Alignment.BottomEnd) 1f else 0.5f,
+                        pivotFractionX = when (layout.alignment) {
+                            Alignment.BottomEnd -> 1f
+                            Alignment.BottomStart -> 0f
+                            else -> 0.5f
+                        },
                         pivotFractionY = 1f
                     )
                 )
                 .drawWithContent {
                     drawContent()
-                    drawRect(
-                        brush = Brush.verticalGradient(
+                    val verticalBrush = if (layout.fadeTopEnd > 0f) {
+                        Brush.verticalGradient(
+                            0.0f to Color.Transparent,
+                            layout.fadeTopEnd to Color.Black,
+                            layout.fadeBottomStart to Color.Black,
+                            1.0f to Color.Transparent
+                        )
+                    } else {
+                        Brush.verticalGradient(
                             0.0f to Color.Black,
                             layout.fadeBottomStart to Color.Black,
                             1.0f to Color.Transparent
-                        ),
+                        )
+                    }
+                    drawRect(
+                        brush = verticalBrush,
                         blendMode = BlendMode.DstIn
                     )
+                    if (layout.fadeHorizontal > 0f) {
+                        drawRect(
+                            brush = Brush.horizontalGradient(
+                                0.0f to Color.Transparent,
+                                layout.fadeHorizontal to Color.Black,
+                                (1f - layout.fadeHorizontal) to Color.Black,
+                                1.0f to Color.Transparent
+                            ),
+                            blendMode = BlendMode.DstIn
+                        )
+                    }
                 }
         )
     }

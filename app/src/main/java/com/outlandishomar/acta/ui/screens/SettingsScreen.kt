@@ -147,34 +147,49 @@ fun SettingsScreen(
     }
 
     val isDark = ThemeState.isThemeDark
+    val context = LocalContext.current
+    val isFullBleedTop = SessionBackgroundArt.isFullBleedTop(context)
 
-    Scaffold(
-        containerColor = TopBarBackground,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Settings",
-                        color = TextPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { showArtPickerDialog = true }
-                    )
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = TopBarBackground)
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(TopBarBackground)
+    ) {
+        if (isFullBleedTop) {
             SettingsBackgroundArt(modifier = Modifier.fillMaxSize())
+        }
+
+        Scaffold(
+            containerColor = if (isFullBleedTop) Color.Transparent else TopBarBackground,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = "Settings",
+                            color = TextPrimary,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { showArtPickerDialog = true }
+                        )
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = if (isFullBleedTop) Color.Transparent else TopBarBackground
+                    )
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                if (!isFullBleedTop) {
+                    SettingsBackgroundArt(modifier = Modifier.fillMaxSize())
+                }
 
             Column(
                 modifier = Modifier
@@ -249,6 +264,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
+        }
         }
     }
 
