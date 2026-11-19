@@ -90,55 +90,38 @@ data class DayTasksState(
     val dayTasksState: StateFlow<DayTasksState> = _selectedDate
         .flatMapLatest { date ->
             val dayMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val isToday = (date == LocalDate.now())
-            if (isToday) {
-                viewModelScope.launch {
-                    repository.rollOverPastUnscheduledTasks(todayMillis)
-                }
-            }
-            val pastHighlightedFlow = if (isToday) {
-                repository.getPastUncompletedHighlightedTasks(dayMillis)
-            } else {
-                flowOf(emptyList())
-            }
 
-            combine(
-                repository.getTasksByDate(dayMillis),
-                pastHighlightedFlow
-            ) { taskList, pastHighlighted ->
-                taskList to pastHighlighted
-            }.flatMapLatest { (taskList, pastHighlighted) ->
-                val regularTasks = taskList.filter { !it.isHighlighted }
-                val dayHighlighted = taskList.filter { it.isHighlighted }
-                val allHighlighted = (dayHighlighted + pastHighlighted).distinctBy { it.id }
-                val allTasksCombined = regularTasks + allHighlighted
-                val ids = allTasksCombined.map { it.id }
-                if (ids.isEmpty()) {
-                    flowOf(
-                        DayTasksState(
-                            date = date,
-                            tasks = emptyList(),
-                            highlightedTasks = emptyList(),
-                            subTasksMap = emptyMap(),
-                            isLoading = false
-                        )
-                    )
-                } else {
-                    val repeatingTaskIds = allTasksCombined.filter { it.repeatMode != "ONCE" }.map { it.id }.toSet()
-                    repository.getSubTasksForTasks(ids, dayMillis, repeatingTaskIds)
-                        .map { subTasks ->
-                            val subMap = subTasks.groupBy { it.taskId }
+            repository.getTasksByDate(dayMillis)
+                .flatMapLatest { taskList ->
+                    val regularTasks = taskList.filter { !it.isHighlighted }
+                    val dayHighlighted = taskList.filter { it.isHighlighted }
+                    val allTasksCombined = regularTasks + dayHighlighted
+                    val ids = allTasksCombined.map { it.id }
+                    if (ids.isEmpty()) {
+                        flowOf(
                             DayTasksState(
                                 date = date,
-                                tasks = regularTasks,
-                                highlightedTasks = allHighlighted,
-                                subTasksMap = subMap,
+                                tasks = emptyList(),
+                                highlightedTasks = emptyList(),
+                                subTasksMap = emptyMap(),
                                 isLoading = false
                             )
-                        }
+                        )
+                    } else {
+                        val repeatingTaskIds = allTasksCombined.filter { it.repeatMode != "ONCE" }.map { it.id }.toSet()
+                        repository.getSubTasksForTasks(ids, dayMillis, repeatingTaskIds)
+                            .map { subTasks ->
+                                val subMap = subTasks.groupBy { it.taskId }
+                                DayTasksState(
+                                    date = date,
+                                    tasks = regularTasks,
+                                    highlightedTasks = dayHighlighted,
+                                    subTasksMap = subMap,
+                                    isLoading = false
+                                )
+                            }
+                    }
                 }
-            }
         }
         .stateIn(
             viewModelScope,
@@ -330,13 +313,7 @@ data class DayTasksState(
             // For recurring tasks, store completion status for the specific projected date
             repository.setTaskCompletionForDate(task.id, task.date, !task.isCompleted)
         } else {
-            val selectedDayMillis = _selectedDate.value.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            val targetTask = if (task.isHighlighted && !task.isCompleted && task.date < selectedDayMillis && task.date != 0L) {
-                task.copy(date = selectedDayMillis)
-            } else {
-                task
-            }
-            repository.toggleComplete(targetTask)
+            repository.toggleComplete(task)
         }
         updateWidget()
     }

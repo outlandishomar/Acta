@@ -17,12 +17,6 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE (repeatMode = 'ONCE' AND date = :dateMillis) OR (repeatMode != 'ONCE' AND date <= :dateMillis AND date != 0 AND (endDate IS NULL OR endDate >= :dateMillis)) ORDER BY orderIndex ASC, createdAt ASC")
     suspend fun getTasksByDateNow(dateMillis: Long): List<Task>
 
-    @Query("SELECT * FROM tasks WHERE isHighlighted = 1 AND isCompleted = 0 AND date < :todayMillis AND date != 0 ORDER BY orderIndex ASC, createdAt ASC")
-    fun getPastUncompletedHighlightedTasks(todayMillis: Long): Flow<List<Task>>
-
-    @Query("UPDATE tasks SET date = :todayMillis WHERE isHighlighted = 1 AND isCompleted = 0 AND date < :todayMillis AND date != 0")
-    suspend fun rollOverPastUnscheduledTasks(todayMillis: Long)
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCompletion(completion: TaskCompletion)
 
