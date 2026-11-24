@@ -289,7 +289,7 @@ fun AddTaskDialog(
             onDismiss() 
         },
             sheetState = sheetState,
-            containerColor = White,
+            containerColor = TopBarBackground,
             dragHandle = { BottomSheetDefaults.DragHandle(color = TextPrimary) }
         ) {
         BackHandler {
@@ -331,50 +331,11 @@ fun AddTaskDialog(
                         .weight(1f, fill = false)
                         .verticalScroll(scrollState)
                 ) {
-                    // Expand/Collapse toggle row at the top right
-                    if (enableAdvanced) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp, bottom = 8.dp),
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null
-                                    ) { isExpanded = !isExpanded }
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Advanced",
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = TextPrimary,
-                                    fontFamily = InterText,
-                                    modifier = Modifier.padding(end = 4.dp)
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.KeyboardArrowUp,
-                                    contentDescription = if (isExpanded) "Collapse" else "Expand",
-                                    tint = TextPrimary,
-                                    modifier = Modifier
-                                        .size(20.dp)
-                                        .rotate(arrowRotation)
-                                )
-                            }
-                        }
-                    } else {
-                        Spacer(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp)
-                        )
-                    }
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                    )
                     // Main Task text field
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
                         androidx.compose.foundation.text.BasicTextField(
@@ -612,6 +573,12 @@ fun AddTaskDialog(
                             ) + fadeOut(animationSpec = tween(200))
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
+                                if (subTasks.isEmpty()) {
+                                    HorizontalDivider(
+                                        color = Divider,
+                                        thickness = 0.5.dp
+                                    )
+                                }
                                 Spacer(Modifier.height(16.dp))
                                 WhenSection(
                                     enabled = whenEnabled,
@@ -689,11 +656,11 @@ fun AddTaskDialog(
                     }
                 } // Close inner Column
 
-                // Toolbar (+ and ✓ buttons)
+                // Toolbar (+, Advanced, and ✓ buttons)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp),
+                        .padding(top = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -707,13 +674,46 @@ fun AddTaskDialog(
                                 }
                             },
                             enabled = true,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(44.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Add,
                                 contentDescription = "Add subtask",
                                 tint = TextPrimary,
                                 modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    // Center Advanced toggle button (permanently anchored between + and ✓)
+                    if (enableAdvanced) {
+                        Row(
+                            modifier = Modifier
+                                .defaultMinSize(minWidth = 88.dp, minHeight = 48.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { isExpanded = !isExpanded }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Advanced",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TextPrimary,
+                                fontFamily = InterText,
+                                modifier = Modifier.padding(end = 4.dp)
+                            )
+                            Icon(
+                                imageVector = Icons.Filled.KeyboardArrowUp,
+                                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                tint = TextPrimary,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .rotate(arrowRotation)
                             )
                         }
                     }
@@ -732,7 +732,7 @@ fun AddTaskDialog(
                                 onDismiss()
                             }
                         },
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(44.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Check,
@@ -1193,7 +1193,7 @@ private fun ToggleCircle(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = "Enabled",
-                    tint = White,
+                    tint = TopBarBackground,
                     modifier = Modifier.size(13.dp)
                 )
             }
@@ -1429,7 +1429,7 @@ private fun HowOftenSection(
                         text = label,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isSelected) White else Blue500
+                        color = if (isSelected) TopBarBackground else Blue500
                     )
                 }
             }
@@ -1524,7 +1524,7 @@ private fun WeeklyOptions(
                     label = "dayChipBg"
                 )
                 val chipText by animateColorAsState(
-                    targetValue = if (isSelected) White else TextSecondary,
+                    targetValue = if (isSelected) TopBarBackground else TextSecondary,
                     label = "dayChipText"
                 )
                 Box(
@@ -1817,7 +1817,7 @@ fun StartEndDialog(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = White,
+        containerColor = TopBarBackground,
         dragHandle = { BottomSheetDefaults.DragHandle(color = TextPrimary) }
     ) {
         Column(
@@ -2037,7 +2037,7 @@ fun AdvancedNotesDialog(
 
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = White
+            color = TopBarBackground
         ) {
             Column(
                 modifier = Modifier
@@ -2287,7 +2287,7 @@ fun AdvancedNotesDialog(
                                 Modifier
                             }
                         ),
-                    color = White
+                    color = TopBarBackground
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         HorizontalDivider(color = Divider.copy(alpha = 0.25f), thickness = 0.5.dp)

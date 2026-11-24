@@ -151,6 +151,78 @@ private val NEW_ART_LAYOUT_OVERRIDES = mapOf(
         offsetY = (-95).dp,
         trimBlankColumns = true,
         fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_niko_bellic to ArtLayoutConfig(
+        widthFraction = 0.88f,
+        heightFraction = 0.56f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_superman to ArtLayoutConfig(
+        widthFraction = 0.92f,
+        heightFraction = 0.58f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = false,
+        fadeTopEnd = 0.14f,
+        fadeBottomStart = 0.90f,
+        fadeHorizontal = 0.08f
+    ),
+    R.string.ascii_john_marston to ArtLayoutConfig(
+        widthFraction = 0.86f,
+        heightFraction = 0.62f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_arthur_morgan to ArtLayoutConfig(
+        widthFraction = 0.90f,
+        heightFraction = 0.52f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_arthur_and_john to ArtLayoutConfig(
+        widthFraction = 0.92f,
+        heightFraction = 0.42f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = true,
+        fadeBottomStart = 0.90f
+    ),
+    R.string.ascii_cod_pose to ArtLayoutConfig(
+        widthFraction = 0.92f,
+        heightFraction = 0.46f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = false,
+        fadeTopEnd = 0.12f,
+        fadeBottomStart = 0.90f,
+        fadeHorizontal = 0.06f
+    ),
+    R.string.ascii_cod_pose_2 to ArtLayoutConfig(
+        widthFraction = 0.92f,
+        heightFraction = 0.38f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = false,
+        fadeTopEnd = 0.12f,
+        fadeBottomStart = 0.90f,
+        fadeHorizontal = 0.06f
+    ),
+    R.string.ascii_cod_pose_3 to ArtLayoutConfig(
+        widthFraction = 0.92f,
+        heightFraction = 0.44f,
+        alignment = Alignment.BottomCenter,
+        offsetY = 8.dp,
+        trimBlankColumns = false,
+        fadeTopEnd = 0.12f,
+        fadeBottomStart = 0.90f,
+        fadeHorizontal = 0.06f
     )
 )
 
@@ -188,7 +260,15 @@ val SETTINGS_BACKGROUND_ART_OPTIONS = listOf(
     BackgroundArtOption(R.string.ascii_kevin_hart_cat, "Kevin Hart Cat"),
     BackgroundArtOption(R.string.ascii_nokias_bond, "Nokia's Bond"),
     BackgroundArtOption(R.string.ascii_scarface, "Scarface"),
-    BackgroundArtOption(R.string.ascii_akira, "Akira")
+    BackgroundArtOption(R.string.ascii_akira, "Akira"),
+    BackgroundArtOption(R.string.ascii_niko_bellic, "Niko Bellic"),
+    BackgroundArtOption(R.string.ascii_superman, "Superman"),
+    BackgroundArtOption(R.string.ascii_john_marston, "John Marston"),
+    BackgroundArtOption(R.string.ascii_arthur_morgan, "Arthur Morgan"),
+    BackgroundArtOption(R.string.ascii_arthur_and_john, "Arthur & John"),
+    BackgroundArtOption(R.string.ascii_cod_pose, "COD Pose"),
+    BackgroundArtOption(R.string.ascii_cod_pose_2, "COD Pose 2"),
+    BackgroundArtOption(R.string.ascii_cod_pose_3, "COD Pose 3")
 )
 
 object SessionBackgroundArt {
