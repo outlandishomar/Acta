@@ -103,7 +103,9 @@ fun HomeScreen(
     viewModel: TaskViewModel,
     openTaskId: Int = -1,
     onTaskOpened: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    bottomBarBoundsInRoot: Rect? = null,
+    onDragStateChanged: (isDragging: Boolean, isHoveringDelete: Boolean) -> Unit = { _, _ -> }
 ) {
     val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
     val dayTasksState by viewModel.dayTasksState.collectAsStateWithLifecycle()
@@ -312,6 +314,64 @@ fun HomeScreen(
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
         wasHoveringUnscheduled = isHoveringUnscheduled
+    }
+
+    var lastHoveredDeleteTaskId by remember { mutableStateOf<Int?>(null) }
+
+    val isHoveringDelete = remember(
+        activeReorderingTaskId,
+        bottomBarBoundsInRoot,
+        rootPointerPosition,
+        isHoveringUnscheduled
+    ) {
+        if (activeReorderingTaskId == null || rootPointerPosition == null || isHoveringUnscheduled) {
+            false
+        } else {
+            val pointer = rootPointerPosition!!
+            val bufferPx = with(density) { 36.dp.toPx() }
+            bottomBarBoundsInRoot?.let { bounds ->
+                pointer.y >= (bounds.top - bufferPx)
+            } ?: false
+        }
+    }
+
+    SideEffect {
+        if (isHoveringDelete && activeReorderingTaskId != null) {
+            lastHoveredDeleteTaskId = activeReorderingTaskId
+        } else if (!isHoveringDelete) {
+            lastHoveredDeleteTaskId = null
+        }
+    }
+
+    val currentIsHoveringDelete by rememberUpdatedState(isHoveringDelete)
+
+    val checkIsPointerOverDelete: () -> Boolean = {
+        val pointer = rootPointerPosition
+        if (pointer != null && !checkIsPointerOverUnscheduled()) {
+            val bufferPx = with(density) { 36.dp.toPx() }
+            bottomBarBoundsInRoot?.let { bounds ->
+                pointer.y >= (bounds.top - bufferPx)
+            } ?: false
+        } else false
+    }
+    val currentCheckIsPointerOverDelete by rememberUpdatedState(checkIsPointerOverDelete)
+
+    var wasHoveringDelete by remember { mutableStateOf(false) }
+    LaunchedEffect(isHoveringDelete) {
+        if (isHoveringDelete && !wasHoveringDelete) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+        wasHoveringDelete = isHoveringDelete
+    }
+
+    val isAnyTaskDragging = activeReorderingTaskId != null || draggingTaskId != null
+    LaunchedEffect(isAnyTaskDragging, isHoveringDelete) {
+        onDragStateChanged(isAnyTaskDragging, isHoveringDelete)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            onDragStateChanged(false, false)
+        }
     }
 
     val calculateDropIndex: (Float) -> Int = { rawY ->
@@ -651,9 +711,15 @@ fun HomeScreen(
                                                             val wasHovering = currentIsHoveringUnscheduled ||
                                                                     currentCheckIsPointerOverUnscheduled() ||
                                                                     (lastHoveredTargetTaskId == taskIdToDrop)
+                                                            val wasHoveringTrash = !wasHovering && (
+                                                                    currentIsHoveringDelete ||
+                                                                    currentCheckIsPointerOverDelete() ||
+                                                                    (lastHoveredDeleteTaskId == taskIdToDrop)
+                                                            )
 
                                                             activeReorderingTaskId = null
                                                             lastHoveredTargetTaskId = null
+                                                            lastHoveredDeleteTaskId = null
 
                                                             if (wasHovering) {
                                                                 val remainingTasks = currentLocalTasks.filter { it.id != taskIdToDrop }
@@ -661,6 +727,13 @@ fun HomeScreen(
                                                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                                 viewModel.reorderTasks(remainingTasks)
                                                                 viewModel.makeTaskUnscheduledById(taskIdToDrop)
+                                                            } else if (wasHoveringTrash) {
+                                                                val taskToDelete = currentLocalTasks.firstOrNull { it.id == taskIdToDrop } ?: task
+                                                                val remainingTasks = currentLocalTasks.filter { it.id != taskIdToDrop }
+                                                                localTasks = remainingTasks
+                                                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                                viewModel.reorderTasks(remainingTasks)
+                                                                viewModel.deleteTask(taskToDelete)
                                                             } else {
                                                                 viewModel.reorderTasks(currentLocalTasks)
                                                             }

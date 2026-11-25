@@ -74,6 +74,22 @@ import com.outlandishomar.acta.ui.theme.ThemeState
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import android.content.ClipDescription
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.mimeTypes
+import androidx.compose.ui.draganddrop.toAndroidDragEvent
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.font.FontWeight
 
 private enum class BottomTab(
     val label: String
@@ -199,6 +215,90 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                     }
                 }
         ) {
+        val dayTasksState by viewModel.dayTasksState.collectAsStateWithLifecycle()
+        val hapticFeedback = LocalHapticFeedback.current
+        var bottomBarBoundsInRoot by remember { mutableStateOf<Rect?>(null) }
+        var isTaskDragging by remember { mutableStateOf(false) }
+        var isHoveringDeleteFromReorder by remember { mutableStateOf(false) }
+        var isHoveringDeleteFromDnd by remember { mutableStateOf(false) }
+        val isHoveringDelete = isHoveringDeleteFromReorder || isHoveringDeleteFromDnd
+
+        val currentAllDayTasks by rememberUpdatedState(
+            dayTasksState.tasks + dayTasksState.highlightedTasks
+        )
+
+        val bottomBarDeleteDropTarget = remember {
+            object : DragAndDropTarget {
+                override fun onEntered(event: DragAndDropEvent) {
+                    isHoveringDeleteFromDnd = true
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+
+                override fun onExited(event: DragAndDropEvent) {
+                    isHoveringDeleteFromDnd = false
+                }
+
+                override fun onEnded(event: DragAndDropEvent) {
+                    isHoveringDeleteFromDnd = false
+                }
+
+                override fun onDrop(event: DragAndDropEvent): Boolean {
+                    isHoveringDeleteFromDnd = false
+                    val dragEvent = event.toAndroidDragEvent()
+                    val clipData = dragEvent.clipData
+                    if (clipData != null && clipData.itemCount > 0) {
+                        val taskIdStr = clipData.getItemAt(0).text?.toString()
+                        val taskId = taskIdStr?.toIntOrNull()
+                        if (taskId != null) {
+                            val targetTask = currentAllDayTasks.firstOrNull { it.id == taskId }
+                            if (targetTask != null) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                                viewModel.deleteTask(targetTask)
+                                return true
+                            }
+                        }
+                    }
+                    return false
+                }
+            }
+        }
+
+        val trashRed = Color(0xFFFF3B30)
+        val dragBinProgress by animateFloatAsState(
+            targetValue = if (isTaskDragging) 1f else 0f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            ),
+            label = "drag_bin_progress"
+        )
+        val hoverBinProgress by animateFloatAsState(
+            targetValue = if (isHoveringDelete) 1f else 0f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "hover_bin_progress"
+        )
+        val bottomBarBgColor by animateColorAsState(
+            targetValue = when {
+                !isTaskDragging -> BottomBarBackground
+                isHoveringDelete -> lerp(BottomBarBackground, trashRed, if (isDark) 0.44f else 0.34f)
+                else -> lerp(BottomBarBackground, trashRed, if (isDark) 0.24f else 0.18f)
+            },
+            animationSpec = tween(durationMillis = 200),
+            label = "bottom_bar_bg_color"
+        )
+        val bottomBarDividerColor by animateColorAsState(
+            targetValue = when {
+                !isTaskDragging -> Divider.copy(alpha = 0.28f)
+                isHoveringDelete -> trashRed.copy(alpha = 0.90f)
+                else -> trashRed.copy(alpha = 0.55f)
+            },
+            animationSpec = tween(durationMillis = 200),
+            label = "bottom_bar_divider_color"
+        )
+
         Scaffold(
             containerColor = TopBarBackground,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -206,43 +306,128 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(BottomBarBackground)
+                        .onGloballyPositioned { coordinates ->
+                            bottomBarBoundsInRoot = coordinates.boundsInRoot()
+                        }
+                        .dragAndDropTarget(
+                            shouldStartDragAndDrop = { event ->
+                                event.mimeTypes().contains(ClipDescription.MIMETYPE_TEXT_PLAIN)
+                            },
+                            target = bottomBarDeleteDropTarget
+                        )
+                        .background(bottomBarBgColor)
+                        .drawBehind {
+                            if (dragBinProgress > 0.01f) {
+                                val glowAlpha = (0.20f + 0.22f * hoverBinProgress) * dragBinProgress
+                                val glowRadius = size.width * (0.45f + 0.15f * hoverBinProgress)
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            trashRed.copy(alpha = glowAlpha),
+                                            trashRed.copy(alpha = glowAlpha * 0.35f),
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width / 2f, 0f),
+                                        radius = glowRadius.coerceAtLeast(1f)
+                                    ),
+                                    radius = glowRadius.coerceAtLeast(1f),
+                                    center = Offset(size.width / 2f, 0f)
+                                )
+                            }
+                        }
                 ) {
                     HorizontalDivider(
-                        color = Divider.copy(alpha = 0.28f),
-                        thickness = 0.5.dp
+                        color = bottomBarDividerColor,
+                        thickness = if (isTaskDragging) 1.dp else 0.5.dp
                     )
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .windowInsetsPadding(WindowInsets.navigationBars)
                             .height(64.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                        contentAlignment = Alignment.Center
                     ) {
-                        BottomNavTab(
-                            label = BottomTab.Inbox.label,
-                            painter = inboxIcon,
-                            selected = selectedTab == BottomTab.Inbox,
-                            onClick = { selectedTab = BottomTab.Inbox },
-                            modifier = Modifier.weight(1f)
-                        )
+                        if (dragBinProgress < 0.99f) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer {
+                                        alpha = (1f - dragBinProgress * 1.35f).coerceIn(0f, 1f)
+                                        val navScale = 1f - 0.08f * dragBinProgress
+                                        scaleX = navScale
+                                        scaleY = navScale
+                                    },
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                BottomNavTab(
+                                    label = BottomTab.Inbox.label,
+                                    painter = inboxIcon,
+                                    selected = selectedTab == BottomTab.Inbox,
+                                    onClick = { if (!isTaskDragging) selectedTab = BottomTab.Inbox },
+                                    modifier = Modifier.weight(1f)
+                                )
 
-                        BottomNavTab(
-                            label = BottomTab.Tasks.label,
-                            painter = tasksIcon,
-                            selected = selectedTab == BottomTab.Tasks,
-                            onClick = { selectedTab = BottomTab.Tasks },
-                            modifier = Modifier.weight(1f)
-                        )
+                                BottomNavTab(
+                                    label = BottomTab.Tasks.label,
+                                    painter = tasksIcon,
+                                    selected = selectedTab == BottomTab.Tasks,
+                                    onClick = { if (!isTaskDragging) selectedTab = BottomTab.Tasks },
+                                    modifier = Modifier.weight(1f)
+                                )
 
-                        BottomNavTab(
-                            label = BottomTab.Settings.label,
-                            painter = settingsIcon,
-                            selected = selectedTab == BottomTab.Settings,
-                            onClick = { selectedTab = BottomTab.Settings },
-                            modifier = Modifier.weight(1f)
-                        )
+                                BottomNavTab(
+                                    label = BottomTab.Settings.label,
+                                    painter = settingsIcon,
+                                    selected = selectedTab == BottomTab.Settings,
+                                    onClick = { if (!isTaskDragging) selectedTab = BottomTab.Settings },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+
+                        if (dragBinProgress > 0.01f) {
+                            val binContentColor = if (isHoveringDelete) {
+                                Color.White
+                            } else {
+                                if (isDark) Color(0xFFFF6961) else trashRed
+                            }
+                            val binPillBg = if (isHoveringDelete) {
+                                trashRed.copy(alpha = 0.92f)
+                            } else {
+                                trashRed.copy(alpha = if (isDark) 0.24f else 0.16f)
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .graphicsLayer {
+                                        alpha = dragBinProgress.coerceIn(0f, 1f)
+                                        val baseScale = 0.80f + 0.20f * dragBinProgress
+                                        val hoverScale = 1f + 0.14f * hoverBinProgress
+                                        scaleX = baseScale * hoverScale
+                                        scaleY = baseScale * hoverScale
+                                    }
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(binPillBg)
+                                    .padding(horizontal = 20.dp, vertical = 9.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = if (isHoveringDelete) Icons.Filled.Delete else Icons.Outlined.Delete,
+                                    contentDescription = "Delete task",
+                                    tint = binContentColor,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isHoveringDelete) "Release to delete" else "Drop to delete",
+                                    color = binContentColor,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = InterText
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -287,11 +472,21 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                             onProfileClick = {
                                 selectedTab = BottomTab.Settings
                                 targetSubPage = SettingsSubPage.PROFILE
+                            },
+                            bottomBarBoundsInRoot = bottomBarBoundsInRoot,
+                            onDragStateChanged = { dragging, hoveringDelete ->
+                                isTaskDragging = dragging
+                                isHoveringDeleteFromReorder = hoveringDelete
                             }
                         )
                         BottomTab.Inbox -> InboxScreen(
                             viewModel = viewModel,
-                            onAddInboxTaskClick = { showInboxAdd = true }
+                            onAddInboxTaskClick = { showInboxAdd = true },
+                            bottomBarBoundsInRoot = bottomBarBoundsInRoot,
+                            onDragStateChanged = { dragging, hoveringDelete ->
+                                isTaskDragging = dragging
+                                isHoveringDeleteFromReorder = hoveringDelete
+                            }
                         )
                         BottomTab.Settings -> SettingsScreen(
                             onOpenSubPage = { page -> targetSubPage = page },
@@ -300,13 +495,54 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
                     }
                 }
 
+                // Soft red aura radiating upward from the bottom trash bin bar while holding/dragging a task
+                if (dragBinProgress > 0.01f) {
+                    val auraHeight = (56f + 28f * hoverBinProgress).dp
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(auraHeight)
+                            .drawBehind {
+                                val baseAlpha = (0.24f + 0.22f * hoverBinProgress) * dragBinProgress
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            trashRed.copy(alpha = baseAlpha * 0.38f),
+                                            trashRed.copy(alpha = baseAlpha)
+                                        )
+                                    )
+                                )
+                                val radialRadius = size.width * (0.48f + 0.14f * hoverBinProgress)
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            trashRed.copy(alpha = baseAlpha * 1.15f),
+                                            trashRed.copy(alpha = baseAlpha * 0.45f),
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width / 2f, size.height),
+                                        radius = radialRadius.coerceAtLeast(1f)
+                                    ),
+                                    radius = radialRadius.coerceAtLeast(1f),
+                                    center = Offset(size.width / 2f, size.height)
+                                )
+                            }
+                    )
+                }
+
                 if (selectedTab != BottomTab.Settings) {
                     // Material You tonal squircle '+' FAB at bottom-right (no border, no glossy sheen)
                     val fabShape = RoundedCornerShape(16.dp)
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
                     val fabScale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.94f else 1f,
+                        targetValue = when {
+                            isTaskDragging -> 0f
+                            isPressed -> 0.94f
+                            else -> 1f
+                        },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessMedium

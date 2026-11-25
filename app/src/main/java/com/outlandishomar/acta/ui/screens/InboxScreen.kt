@@ -41,12 +41,23 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun InboxScreen(
     viewModel: TaskViewModel,
-    onAddInboxTaskClick: () -> Unit = {}
+    onAddInboxTaskClick: () -> Unit = {},
+    bottomBarBoundsInRoot: Rect? = null,
+    onDragStateChanged: (isDragging: Boolean, isHoveringDelete: Boolean) -> Unit = { _, _ -> }
 ) {
     val inboxTasks by viewModel.inboxTasks.collectAsStateWithLifecycle()
     val inboxSubTasksMap by viewModel.inboxSubTasksMap.collectAsStateWithLifecycle()
@@ -104,6 +115,68 @@ fun InboxScreen(
         }
     }
 
+    var rootLayoutCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    var rootPointerPosition by remember { mutableStateOf<Offset?>(null) }
+    var activeReorderingTaskId by remember { mutableStateOf<Int?>(null) }
+    var lastHoveredDeleteTaskId by remember { mutableStateOf<Int?>(null) }
+
+    val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
+
+    val isHoveringDelete = remember(
+        activeReorderingTaskId,
+        bottomBarBoundsInRoot,
+        rootPointerPosition
+    ) {
+        if (activeReorderingTaskId == null || rootPointerPosition == null) {
+            false
+        } else {
+            val pointer = rootPointerPosition!!
+            val bufferPx = with(density) { 36.dp.toPx() }
+            bottomBarBoundsInRoot?.let { bounds ->
+                pointer.y >= (bounds.top - bufferPx)
+            } ?: false
+        }
+    }
+
+    SideEffect {
+        if (isHoveringDelete && activeReorderingTaskId != null) {
+            lastHoveredDeleteTaskId = activeReorderingTaskId
+        } else if (!isHoveringDelete) {
+            lastHoveredDeleteTaskId = null
+        }
+    }
+
+    val currentIsHoveringDelete by rememberUpdatedState(isHoveringDelete)
+    val checkIsPointerOverDelete: () -> Boolean = {
+        val pointer = rootPointerPosition
+        if (pointer != null) {
+            val bufferPx = with(density) { 36.dp.toPx() }
+            bottomBarBoundsInRoot?.let { bounds ->
+                pointer.y >= (bounds.top - bufferPx)
+            } ?: false
+        } else false
+    }
+    val currentCheckIsPointerOverDelete by rememberUpdatedState(checkIsPointerOverDelete)
+
+    var wasHoveringDelete by remember { mutableStateOf(false) }
+    LaunchedEffect(isHoveringDelete) {
+        if (isHoveringDelete && !wasHoveringDelete) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+        wasHoveringDelete = isHoveringDelete
+    }
+
+    val isAnyTaskDragging = activeReorderingTaskId != null
+    LaunchedEffect(isAnyTaskDragging, isHoveringDelete) {
+        onDragStateChanged(isAnyTaskDragging, isHoveringDelete)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            onDragStateChanged(false, false)
+        }
+    }
+
     val isOverlayVisible = taskForActionSheet != null || taskForEditDialog != null
     val blurModifier = if (isOverlayVisible && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Modifier.blur(10.dp)
@@ -111,7 +184,25 @@ fun InboxScreen(
         Modifier
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onGloballyPositioned { rootLayoutCoordinates = it }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull()
+                        if (change != null && change.pressed) {
+                            val pos = rootLayoutCoordinates?.localToRoot(change.position)
+                            if (pos != null) {
+                                rootPointerPosition = pos
+                            }
+                        }
+                    }
+                }
+            }
+    ) {
         Scaffold(
             containerColor = TopBarBackground,
             topBar = {
@@ -240,7 +331,29 @@ fun InboxScreen(
                                             )
                                         )
                                         .longPressDraggableHandle(
-                                            onDragStopped = { viewModel.reorderTasks(currentLocalTasks) }
+                                            onDragStarted = {
+                                                activeReorderingTaskId = task.id
+                                            },
+                                            onDragStopped = {
+                                                val taskIdToDrop = task.id
+                                                val wasHoveringTrash = currentIsHoveringDelete ||
+                                                        currentCheckIsPointerOverDelete() ||
+                                                        (lastHoveredDeleteTaskId == taskIdToDrop)
+
+                                                activeReorderingTaskId = null
+                                                lastHoveredDeleteTaskId = null
+
+                                                if (wasHoveringTrash) {
+                                                    val taskToDelete = currentLocalTasks.firstOrNull { it.id == taskIdToDrop } ?: task
+                                                    val remainingTasks = currentLocalTasks.filter { it.id != taskIdToDrop }
+                                                    localTasks = remainingTasks
+                                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    viewModel.reorderTasks(remainingTasks)
+                                                    viewModel.deleteTask(taskToDelete)
+                                                } else {
+                                                    viewModel.reorderTasks(currentLocalTasks)
+                                                }
+                                            }
                                         )
                                 ) {
                                     TaskItem(
