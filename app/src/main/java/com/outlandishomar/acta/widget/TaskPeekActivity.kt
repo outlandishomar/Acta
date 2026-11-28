@@ -20,6 +20,7 @@ import com.outlandishomar.acta.data.model.SubTaskCompletion
 import com.outlandishomar.acta.data.model.Task
 import com.outlandishomar.acta.data.model.TaskCompletion
 import com.outlandishomar.acta.ui.components.RichTextHelper
+import com.outlandishomar.acta.ui.components.TaskIcons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
@@ -75,8 +76,11 @@ class TaskPeekActivity : Activity() {
 
         val checkboxTarget = findViewById<View>(R.id.acta_task_peek_checkbox_target)
         val checkboxBox = findViewById<ImageView>(R.id.acta_task_peek_checkbox_box)
+        val taskIconView = findViewById<ImageView>(R.id.acta_task_peek_task_icon)
         val titleView = findViewById<TextView>(R.id.acta_task_peek_title)
         val timeView = findViewById<TextView>(R.id.acta_task_peek_time)
+        val bellView = findViewById<ImageView>(R.id.acta_task_peek_bell)
+        val repeatView = findViewById<ImageView>(R.id.acta_task_peek_repeat)
         val notesView = findViewById<TextView>(R.id.acta_task_peek_notes)
         subTasksContainer = findViewById(R.id.acta_task_peek_subtasks)
         val openAppBtn = findViewById<Button>(R.id.acta_task_peek_open_app)
@@ -84,6 +88,25 @@ class TaskPeekActivity : Activity() {
 
         val task = currentTask!!
         checkboxBox.setColorFilter(palette.checkboxBorder)
+
+        val iconOption = TaskIcons.getOptionByName(task.iconName)
+        when {
+            iconOption?.drawableRes != null -> {
+                taskIconView.setImageResource(iconOption.drawableRes)
+                taskIconView.setColorFilter(palette.text)
+                taskIconView.visibility = View.VISIBLE
+            }
+            iconOption?.icon != null -> {
+                val sizePx = (18f * resources.displayMetrics.density).roundToInt().coerceAtLeast(24)
+                taskIconView.setImageBitmap(TaskIcons.renderImageVectorToBitmap(iconOption.icon, sizePx, palette.text))
+                taskIconView.clearColorFilter()
+                taskIconView.visibility = View.VISIBLE
+            }
+            else -> {
+                taskIconView.visibility = View.GONE
+            }
+        }
+
         titleView.text = task.title
         titleView.setTextColor(palette.text)
 
@@ -91,10 +114,27 @@ class TaskPeekActivity : Activity() {
             val h = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
             val ap = if (task.taskTimeHour < 12) "AM" else "PM"
             timeView.text = String.format(Locale.US, "%d:%02d %s", h, task.taskTimeMinute, ap)
-            timeView.setTextColor(palette.mutedText)
+            timeView.setTextColor(palette.faintNotesText)
             timeView.visibility = View.VISIBLE
+
+            val hasAlert = task.alertEnabled ||
+                com.outlandishomar.acta.data.model.CustomAlert.parseList(task.additionalAlerts).any { it.isEnabled }
+            if (hasAlert) {
+                bellView.setColorFilter(palette.faintNotesText)
+                bellView.visibility = View.VISIBLE
+            } else {
+                bellView.visibility = View.GONE
+            }
         } else {
             timeView.visibility = View.GONE
+            bellView.visibility = View.GONE
+        }
+
+        if (task.repeatMode != "ONCE") {
+            repeatView.setColorFilter(palette.faintNotesText)
+            repeatView.visibility = View.VISIBLE
+        } else {
+            repeatView.visibility = View.GONE
         }
 
         val plainNotes = RichTextHelper.parseToRichSpans(task.description).first.trim()

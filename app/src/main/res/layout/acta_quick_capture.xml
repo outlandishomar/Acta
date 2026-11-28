@@ -25,26 +25,56 @@
             android:layoutDirection="ltr"
             android:orientation="vertical">
 
-            <EditText
-                android:id="@+id/acta_quick_capture_input"
+            <!-- Title row: Icon '+' button on left + Main Task input -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:fontFamily="sans-serif-medium"
-                android:gravity="top|left"
-                android:hint="What would you like to do?"
-                android:imeOptions="actionNext"
-                android:importantForAutofill="no"
-                android:inputType="textCapSentences|textAutoCorrect"
-                android:maxLength="500"
-                android:maxLines="3"
-                android:minLines="1"
-                android:paddingTop="2dp"
-                android:paddingBottom="10dp"
-                android:textAlignment="gravity"
-                android:textColor="@color/acta_widget_text"
-                android:textColorHint="@color/acta_widget_muted_text"
-                android:textSize="20sp" />
+                android:gravity="center_vertical"
+                android:layoutDirection="ltr"
+                android:orientation="horizontal"
+                android:paddingBottom="10dp">
+
+                <FrameLayout
+                    android:id="@+id/acta_quick_capture_icon_btn"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginEnd="10dp"
+                    android:clickable="true"
+                    android:contentDescription="Choose task icon"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:id="@+id/acta_quick_capture_icon_img"
+                        android:layout_width="19dp"
+                        android:layout_height="19dp"
+                        android:layout_gravity="center"
+                        android:importantForAccessibility="no"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/acta_add_icon" />
+                </FrameLayout>
+
+                <EditText
+                    android:id="@+id/acta_quick_capture_input"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center_vertical|left"
+                    android:hint="What would you like to do?"
+                    android:imeOptions="actionNext"
+                    android:importantForAutofill="no"
+                    android:inputType="textCapSentences|textAutoCorrect"
+                    android:maxLength="500"
+                    android:maxLines="3"
+                    android:minLines="1"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:textAlignment="gravity"
+                    android:textColor="@color/acta_widget_text"
+                    android:textColorHint="@color/acta_widget_muted_text"
+                    android:textSize="20sp" />
+            </LinearLayout>
 
             <EditText
                 android:id="@+id/acta_quick_capture_description"
@@ -59,11 +89,55 @@
                 android:maxLines="5"
                 android:minLines="1"
                 android:paddingTop="2dp"
-                android:paddingBottom="10dp"
+                android:paddingBottom="6dp"
                 android:textAlignment="gravity"
                 android:textColor="@color/acta_widget_muted_text"
                 android:textColorHint="@color/acta_widget_muted_text"
                 android:textSize="16sp" />
+
+            <!-- Advanced notes button placed below notes on the left -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left|center_vertical"
+                android:layoutDirection="ltr"
+                android:orientation="horizontal"
+                android:paddingBottom="8dp">
+
+                <LinearLayout
+                    android:id="@+id/acta_quick_capture_advanced_notes_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:layoutDirection="ltr"
+                    android:orientation="horizontal"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp">
+
+                    <TextView
+                        android:id="@+id/acta_quick_capture_advanced_notes_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Advanced"
+                        android:textColor="@color/acta_widget_muted_text"
+                        android:textSize="14sp" />
+
+                    <ImageView
+                        android:id="@+id/acta_quick_capture_advanced_notes_arrow"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="4dp"
+                        android:importantForAccessibility="no"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/acta_chevron_right" />
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/acta_quick_capture_subtasks_section"
@@ -95,13 +169,19 @@
                     android:layout_height="0.75dp"
                     android:background="@color/acta_widget_border" />
             </LinearLayout>
+
+            <androidx.compose.ui.platform.ComposeView
+                android:id="@+id/acta_quick_capture_advanced_compose"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </LinearLayout>
     </ScrollView>
 
+    <!-- Bottom Toolbar: +, Advanced ^, and ✓ -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="10dp"
         android:gravity="center_vertical"
         android:layoutDirection="ltr"
         android:orientation="horizontal">
@@ -115,6 +195,43 @@
             android:padding="5dp"
             android:scaleType="fitCenter"
             android:src="@drawable/acta_add_icon" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:id="@+id/acta_quick_capture_advanced_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:layoutDirection="ltr"
+            android:minWidth="88dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:id="@+id/acta_quick_capture_advanced_toggle_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Advanced"
+                android:textColor="@color/acta_widget_text"
+                android:textSize="15sp" />
+
+            <ImageView
+                android:id="@+id/acta_quick_capture_advanced_toggle_arrow"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:importantForAccessibility="no"
+                android:scaleType="fitCenter"
+                android:src="@drawable/acta_chevron_up" />
+        </LinearLayout>
 
         <View
             android:layout_width="0dp"

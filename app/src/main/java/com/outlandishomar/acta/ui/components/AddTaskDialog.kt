@@ -179,11 +179,9 @@ fun AddTaskDialog(
     var notes by remember { mutableStateOf(initialNotes) }
     
     var selectedIconName by remember { 
-        mutableStateOf<String?>(
-            if (isEditMode) initialIconName 
-            else null
-        ) 
+        mutableStateOf<String?>(initialIconName) 
     }
+    var showIconPickerDialog by remember { mutableStateOf(false) }
     var showAdditionalAlertTimePicker by remember { mutableStateOf(false) }
     var showAdvancedNotesDialog by remember { mutableStateOf(false) }
     
@@ -336,8 +334,49 @@ fun AddTaskDialog(
                             .fillMaxWidth()
                             .height(8.dp)
                     )
-                    // Main Task text field
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    // Main Task text field with Icon Picker '+' button on the left
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    ) {
+                        val hasChosenIcon = TaskIcons.hasIcon(selectedIconName)
+                        val isDarkSheet = ThemeState.isThemeDark || TopBarBackground.calculateLuminance() <= 0.5f
+                        val iconBtnBg = if (isDarkSheet) {
+                            androidx.compose.ui.graphics.lerp(TopBarBackground, Color.White, 0.08f)
+                        } else {
+                            androidx.compose.ui.graphics.lerp(TopBarBackground, Color.Black, 0.06f)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(iconBtnBg)
+                                .clickable {
+                                    keyboardController?.hide()
+                                    showIconPickerDialog = true
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (hasChosenIcon) {
+                                TaskIcon(
+                                    iconName = selectedIconName,
+                                    tint = Blue500,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = "Choose task icon",
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
                         androidx.compose.foundation.text.BasicTextField(
                             value = title,
                             onValueChange = { title = it },
@@ -857,6 +896,14 @@ fun AddTaskDialog(
 
 
 
+    if (showIconPickerDialog) {
+        TaskIconPickerDialog(
+            selectedIconName = selectedIconName,
+            onIconSelected = { picked -> selectedIconName = picked },
+            onDismiss = { showIconPickerDialog = false }
+        )
+    }
+
     if (showAdvancedNotesDialog) {
         AdvancedNotesDialog(
             initialNotes = notes,
@@ -984,7 +1031,7 @@ fun AddTaskDialog(
 // ─── "When?" Section ───────────────────────────────────────────────────────────
 
 @Composable
-private fun WhenSection(
+internal fun WhenSection(
     enabled: Boolean,
     onToggle: (Boolean) -> Unit,
     selectedHour: Int,
@@ -1266,10 +1313,21 @@ private fun TimeScrollPicker(
         }
     }
 
+    val hostView = LocalView.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                        if (event.changes.any { it.pressed }) {
+                            hostView.parent?.requestDisallowInterceptTouchEvent(true)
+                        }
+                    }
+                }
+            }
     ) {
         // Selection indicator lines
         Box(
@@ -1346,7 +1404,7 @@ private fun TimeScrollPicker(
 // ─── "How often?" Section ──────────────────────────────────────────────────────
 
 @Composable
-private fun HowOftenSection(
+internal fun HowOftenSection(
     repeatMode: String,
     onRepeatModeChange: (String) -> Unit,
     repeatInterval: Int,
@@ -1869,13 +1927,14 @@ fun StartEndDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val checkmarkColor = if (Blue500.calculateLuminance() <= 0.5f) Color.White else Color(0xFF1E1E1E)
                     Checkbox(
                         checked = hasEndDate,
                         onCheckedChange = onHasEndDateChange,
                         colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFFE63946),
+                            checkedColor = Blue500,
                             uncheckedColor = TextSecondary.copy(alpha = 0.5f),
-                            checkmarkColor = Color.White
+                            checkmarkColor = checkmarkColor
                         ),
                         modifier = Modifier.padding(end = 8.dp)
                     )

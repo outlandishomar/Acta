@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import com.outlandishomar.acta.R
+import com.outlandishomar.acta.ui.components.TaskIcons
 
 class TasksWidgetService : RemoteViewsService() {
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory = TasksWidgetFactory(
@@ -89,6 +90,27 @@ class TasksWidgetFactory(
             setTextViewText(R.id.acta_widget_item_title, item.title)
             setTextColor(R.id.acta_widget_item_title, palette.text)
 
+            // Optional task icon between checkbox and title
+            val iconOption = TaskIcons.getOptionByName(item.iconName)
+            when {
+                iconOption?.drawableRes != null -> {
+                    setViewVisibility(R.id.acta_widget_item_task_icon, View.VISIBLE)
+                    setImageViewResource(R.id.acta_widget_item_task_icon, iconOption.drawableRes)
+                    setInt(R.id.acta_widget_item_task_icon, "setColorFilter", palette.text)
+                }
+                iconOption?.icon != null -> {
+                    val density = context.resources.displayMetrics.density
+                    val sizePx = (16f * density).toInt().coerceAtLeast(24)
+                    val bmp = TaskIcons.renderImageVectorToBitmap(iconOption.icon, sizePx, palette.text)
+                    setViewVisibility(R.id.acta_widget_item_task_icon, View.VISIBLE)
+                    setImageViewBitmap(R.id.acta_widget_item_task_icon, bmp)
+                    setInt(R.id.acta_widget_item_task_icon, "setColorFilter", 0)
+                }
+                else -> {
+                    setViewVisibility(R.id.acta_widget_item_task_icon, View.GONE)
+                }
+            }
+
             // Square checkbox
             setImageViewResource(R.id.acta_widget_item_checkbox_box, R.drawable.acta_widget_checkbox_unchecked)
             setInt(R.id.acta_widget_item_checkbox_box, "setColorFilter", palette.checkboxBorder)
@@ -133,14 +155,28 @@ class TasksWidgetFactory(
                 setViewVisibility(R.id.acta_widget_item_divider, if (isLastRenderedRow) View.GONE else View.VISIBLE)
             }
 
-            // Scheduled time
+            // Scheduled time + notification bell next to title, and repeat icon at the end
             val timeLabel = item.timeLabel
             if (!timeLabel.isNullOrBlank()) {
                 setViewVisibility(R.id.acta_widget_item_due, View.VISIBLE)
                 setTextViewText(R.id.acta_widget_item_due, timeLabel)
-                setTextColor(R.id.acta_widget_item_due, palette.mutedText)
+                setTextColor(R.id.acta_widget_item_due, palette.faintNotesText)
+                if (item.hasAlert) {
+                    setViewVisibility(R.id.acta_widget_item_bell, View.VISIBLE)
+                    setInt(R.id.acta_widget_item_bell, "setColorFilter", palette.faintNotesText)
+                } else {
+                    setViewVisibility(R.id.acta_widget_item_bell, View.GONE)
+                }
             } else {
                 setViewVisibility(R.id.acta_widget_item_due, View.GONE)
+                setViewVisibility(R.id.acta_widget_item_bell, View.GONE)
+            }
+
+            if (item.repeatMode != "ONCE") {
+                setViewVisibility(R.id.acta_widget_item_repeat, View.VISIBLE)
+                setInt(R.id.acta_widget_item_repeat, "setColorFilter", palette.faintNotesText)
+            } else {
+                setViewVisibility(R.id.acta_widget_item_repeat, View.GONE)
             }
 
             // Row click opens TaskPeekActivity popup

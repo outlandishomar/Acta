@@ -504,6 +504,7 @@ fun HomeScreen(
     ) {
         Scaffold(
             containerColor = White,
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
             topBar = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Column(

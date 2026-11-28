@@ -112,7 +112,6 @@
             android:exported="false"
             android:theme="@style/Theme.Acta.QuickCapture"
             android:excludeFromRecents="true"
-            android:noHistory="true"
             android:taskAffinity=""
             android:launchMode="singleTask"
             android:windowSoftInputMode="stateVisible|adjustResize" />

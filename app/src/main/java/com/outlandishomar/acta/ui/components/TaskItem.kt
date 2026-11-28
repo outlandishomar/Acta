@@ -175,9 +175,17 @@ private fun TaskItemContent(
 
                 Spacer(Modifier.width(14.dp))
 
-                // Title with animated strikethrough
+                // Title with animated strikethrough and optional compact task icon between checkbox and title
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (TaskIcons.hasIcon(task.iconName)) {
+                            TaskIcon(
+                                iconName = task.iconName,
+                                tint = textColor,
+                                modifier = Modifier.size(17.dp)
+                            )
+                            Spacer(Modifier.width(7.dp))
+                        }
                         Text(
                             text = task.title,
                             style = MaterialTheme.typography.bodyLarge,

@@ -52,9 +52,11 @@ data class WidgetSubTaskItem(
 data class WidgetTaskItem(
     val id: Int,
     val title: String,
+    val iconName: String?,
     val notesPreview: String?,
     val showNotesIconOnly: Boolean,
     val timeLabel: String?,
+    val hasAlert: Boolean,
     val repeatMode: String,
     val dateMillis: Long,
     val subTasks: List<WidgetSubTaskItem>
@@ -385,12 +387,18 @@ object WidgetTaskLoader {
             } else {
                 null
             }
+            val hasAlert = timeLabel != null && (
+                task.alertEnabled ||
+                    com.outlandishomar.acta.data.model.CustomAlert.parseList(task.additionalAlerts).any { it.isEnabled }
+            )
             WidgetTaskItem(
                 id = task.id,
                 title = task.title,
+                iconName = task.iconName,
                 notesPreview = notesPreview,
                 showNotesIconOnly = showNotesIconOnly,
                 timeLabel = timeLabel,
+                hasAlert = hasAlert,
                 repeatMode = task.repeatMode,
                 dateMillis = dateMillis,
                 subTasks = subTasksByTask[task.id] ?: emptyList()

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
@@ -77,203 +79,199 @@ fun TaskActionSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = White,
+        containerColor = TopBarBackground,
         dragHandle = { BottomSheetDefaults.DragHandle(color = TextPrimary) }
     ) {
+        val isDarkBackground = ThemeState.isThemeDark || TopBarBackground.calculateLuminance() <= 0.5f
+        val duplicateIconRes = if (isDarkBackground) {
+            R.drawable.duplicatewhite
+        } else {
+            R.drawable.duplicateblack
+        }
+        val sheetDividerColor = TextPrimary.copy(alpha = if (isDarkBackground) 0.14f else 0.12f)
+        val actionCardBg = if (isDarkBackground) {
+            lerp(TopBarBackground, Color.White, 0.07f)
+        } else {
+            lerp(TopBarBackground, Color.Black, 0.06f)
+        }
+        val actionContentColor = Blue500
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .padding(horizontal = 20.dp, vertical = 4.dp)
         ) {
-            // Top Bar: Title on the left, Actions (Duplicate, Edit) on the right in a single Row
+            // Main Task Title row with optional time, notification bell, and repeat icon
             Row(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = if (plainNotesText.isNotBlank()) 6.dp else 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Title
                 Row(
-                    modifier = Modifier.weight(1f).padding(end = 12.dp),
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (TaskIcons.hasIcon(task.iconName)) {
+                        TaskIcon(
+                            iconName = task.iconName,
+                            tint = Blue500,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(Modifier.width(10.dp))
+                    }
                     Text(
                         text = task.title,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
                         maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    if (task.taskTimeHour != null && task.taskTimeMinute != null) {
+                        Spacer(Modifier.width(10.dp))
+                        val displayHour = if (task.taskTimeHour % 12 == 0) 12 else task.taskTimeHour % 12
+                        val amPm = if (task.taskTimeHour < 12) "AM" else "PM"
+                        Text(
+                            text = String.format("%d:%02d %s", displayHour, task.taskTimeMinute, amPm),
+                            fontSize = 13.sp,
+                            color = TextSecondary.copy(alpha = 0.75f),
+                            fontWeight = FontWeight.Medium
+                        )
+                        val hasAnyAlert = task.alertEnabled ||
+                                com.outlandishomar.acta.data.model.CustomAlert.parseList(task.additionalAlerts).any { it.isEnabled }
+                        if (hasAnyAlert) {
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Outlined.Notifications,
+                                contentDescription = "Alert enabled",
+                                tint = TextSecondary.copy(alpha = 0.75f),
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
+                }
+
+                if (task.repeatMode != "ONCE") {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        painter = painterResource(id = R.drawable.repeaticon),
+                        contentDescription = "Recurring task",
+                        tint = TextSecondary.copy(alpha = 0.6f),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
-
-                // Top Right Actions: Duplicate on the left of Edit
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val isDarkBackground = ThemeState.isThemeDark || White.calculateLuminance() <= 0.5f
-                    val duplicateIconRes = if (isDarkBackground) {
-                        R.drawable.duplicatewhite
-                    } else {
-                        R.drawable.duplicateblack
-                    }
-
-                    // Duplicate Button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable(onClick = { showDuplicateDialog = true })
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "Duplicate",
-                            color = TextPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            painter = painterResource(id = duplicateIconRes),
-                            contentDescription = "Duplicate Task",
-                            tint = Color.Unspecified,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    // Edit Button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable(onClick = onEdit)
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "Edit",
-                            color = TextPrimary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Filled.Edit,
-                            contentDescription = "Edit Task",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
             }
 
-            // Description / Notes
+            // Description / Notes (directly under main task text without a divider between them)
             if (plainNotesText.isNotBlank()) {
-                Text(
-                    text = formattedNotes,
-                    fontSize = 15.sp,
-                    color = TextSecondary,
-                    lineHeight = 22.sp,
-                    maxLines = if (isNotesExpanded) Int.MAX_VALUE else 10,
-                    overflow = TextOverflow.Ellipsis,
-                    onTextLayout = { textLayoutResult ->
-                        if (!isNotesExpanded && textLayoutResult.hasVisualOverflow) {
-                            hasMoreThan10Lines = true
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                if (hasMoreThan10Lines) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 2.dp, bottom = 4.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(3.5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .clickable { isNotesExpanded = !isNotesExpanded }
-                                .padding(horizontal = 8.dp, vertical = 6.dp)
-                        ) {
-                            repeat(3) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(4.5.dp)
-                                        .clip(CircleShape)
-                                        .background(TextSecondary)
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Spacer(modifier = Modifier.height(14.dp))
-                }
-            }
-
-            // Divider between Notes and Subtasks
-            if (plainNotesText.isNotBlank() && subTasks.isNotEmpty()) {
-                HorizontalDivider(
-                    color = Divider,
-                    thickness = 0.5.dp,
-                    modifier = Modifier.padding(bottom = 14.dp)
-                )
-            }
-
-            // Subtasks
-            if (subTasks.isNotEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp, start = 4.dp)
+                        .padding(bottom = 14.dp)
+                ) {
+                    Text(
+                        text = formattedNotes,
+                        fontSize = 15.sp,
+                        color = TextSecondary,
+                        lineHeight = 22.sp,
+                        maxLines = if (isNotesExpanded) Int.MAX_VALUE else 10,
+                        overflow = TextOverflow.Ellipsis,
+                        onTextLayout = { textLayoutResult ->
+                            if (!isNotesExpanded && textLayoutResult.hasVisualOverflow) {
+                                hasMoreThan10Lines = true
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (hasMoreThan10Lines) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(3.5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { isNotesExpanded = !isNotesExpanded }
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                            ) {
+                                repeat(3) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(4.5.dp)
+                                            .clip(CircleShape)
+                                            .background(TextSecondary)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Visible full-width divider under the main text / notes block
+            HorizontalDivider(
+                color = sheetDividerColor,
+                thickness = 1.dp
+            )
+
+            // Subtasks with our rounded checkboxes and Structured-style row dividers
+            if (subTasks.isNotEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     subTasks.forEach { subTask ->
                         Row(
-                            verticalAlignment = Alignment.Top,
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 2.dp)
-                                .clip(RoundedCornerShape(6.dp))
                                 .clickable { onToggleSubTask(subTask) }
-                                .padding(vertical = 4.dp, horizontal = 4.dp)
+                                .padding(vertical = 13.dp, horizontal = 2.dp)
                         ) {
-                            Box(modifier = Modifier.padding(top = 2.dp)) {
-                                SmallCheckCircle(
-                                    checked = subTask.isCompleted,
-                                    onCheckedChange = { onToggleSubTask(subTask) }
-                                )
-                            }
+                            SmallCheckCircle(
+                                checked = subTask.isCompleted,
+                                onCheckedChange = { onToggleSubTask(subTask) }
+                            )
                             Spacer(Modifier.width(12.dp))
                             Text(
                                 text = subTask.title,
                                 fontSize = 15.sp,
-                                color = if (subTask.isCompleted) TextDisabled else TextSecondary,
+                                color = if (subTask.isCompleted) TextDisabled else TextPrimary,
                                 textDecoration = if (subTask.isCompleted) TextDecoration.LineThrough else null,
                                 lineHeight = 20.sp,
                                 modifier = Modifier.weight(1f)
                             )
                         }
+                        HorizontalDivider(
+                            color = sheetDividerColor,
+                            thickness = 1.dp
+                        )
                     }
                 }
-            } else {
-                Spacer(Modifier.height(16.dp))
             }
 
-            // Bottom Bar: Delete (Left), Complete/Incomplete (Right)
+            Spacer(Modifier.height(18.dp))
+
+            // Structured-style 3 Action Cards Row: Delete | Duplicate | Complete
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp, top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Delete Button (Bottom Left, Crimson Red)
-                Row(
+                // 1. Delete Card
+                Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(actionCardBg)
                         .clickable {
                             if (task.repeatMode != "ONCE") {
                                 showDeleteDialog = true
@@ -281,51 +279,119 @@ fun TaskActionSheet(
                                 onDelete(DeleteType.ALL)
                             }
                         }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 12.dp, horizontal = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
                         contentDescription = "Delete",
-                        tint = Color(0xFFE63946),
-                        modifier = Modifier.size(20.dp)
+                        tint = actionContentColor,
+                        modifier = Modifier.size(22.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(
                         text = "Delete",
-                        color = Color(0xFFE63946),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
+                        color = actionContentColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                // Complete / Incomplete Button (Bottom Right)
-                val completeIcon = if (task.isCompleted) Icons.Filled.Close else Icons.Filled.Check
-                val completeLabel = if (task.isCompleted) "Incomplete" else "Complete"
-                
-                Row(
+                // 2. Duplicate Card
+                Column(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(actionCardBg)
+                        .clickable(onClick = { showDuplicateDialog = true })
+                        .padding(vertical = 12.dp, horizontal = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = duplicateIconRes),
+                        contentDescription = "Duplicate Task",
+                        tint = actionContentColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "Duplicate",
+                        color = actionContentColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // 3. Complete / Incomplete Card
+                val completeIcon = if (task.isCompleted) Icons.Filled.Close else Icons.Filled.CheckCircle
+                val completeLabel = if (task.isCompleted) "Incomplete" else "Complete"
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(actionCardBg)
                         .clickable(onClick = onToggleComplete)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 12.dp, horizontal = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         imageVector = completeIcon,
                         contentDescription = completeLabel,
-                        tint = Blue500,
+                        tint = actionContentColor,
                         modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = completeLabel,
+                        color = actionContentColor,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Full-width "Edit Task" Card at the bottom (like Structured)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(actionCardBg)
+                    .clickable(onClick = onEdit)
+                    .padding(vertical = 14.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Edit,
+                        contentDescription = "Edit Task",
+                        tint = actionContentColor,
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = completeLabel,
-                        color = Blue500,
-                        fontSize = 16.sp,
+                        text = "Edit Task",
+                        color = actionContentColor,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
             }
-            
+
             Spacer(Modifier.height(16.dp))
         }
     }

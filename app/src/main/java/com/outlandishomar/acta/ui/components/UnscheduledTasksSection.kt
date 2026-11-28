@@ -246,6 +246,15 @@ fun UnscheduledChipItem(
 
         Spacer(Modifier.width(8.dp))
 
+        if (TaskIcons.hasIcon(task.iconName)) {
+            TaskIcon(
+                iconName = task.iconName,
+                tint = textColor,
+                modifier = Modifier.size(14.dp)
+            )
+            Spacer(Modifier.width(5.dp))
+        }
+
         if (hasNotes) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.Subject,

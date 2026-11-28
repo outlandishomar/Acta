@@ -702,8 +702,8 @@ fun MainScreen(openTaskId: Int = -1, onTaskOpened: () -> Unit = {}) {
             isHighlighted = false,
             enableAdvanced = false,
             onDismiss = { showInboxAdd = false },
-            onAdd = { title, notes, subTasks, _, _, _, _, _, _, _, _, _, _, _ -> 
-                 viewModel.addInboxTask(title, notes, subTasks)
+            onAdd = { title, notes, subTasks, iconName, _, _, _, _, _, _, _, _, _, _ -> 
+                 viewModel.addInboxTask(title, notes, subTasks, iconName)
                  showInboxAdd = false
             }
         )

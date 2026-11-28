@@ -285,16 +285,16 @@ data class DayTasksState(
         }
     }
 
-    fun addInboxTask(title: String, notes: String, subTaskTitles: List<String> = emptyList()) {
+    fun addInboxTask(title: String, notes: String, subTaskTitles: List<String> = emptyList(), iconName: String? = null) {
         viewModelScope.launch {
             val maxOrder = repository.getMaxOrderIndex()
             val taskId = if (subTaskTitles.isEmpty()) {
                 repository.addTask(
-                    Task(title = title.trim(), description = notes.trim(), date = 0L, orderIndex = maxOrder + 1)
+                    Task(title = title.trim(), description = notes.trim(), date = 0L, iconName = iconName, orderIndex = maxOrder + 1)
                 ).toInt()
             } else {
                 repository.addTaskWithSubTasks(
-                    Task(title = title.trim(), description = notes.trim(), date = 0L, orderIndex = maxOrder + 1),
+                    Task(title = title.trim(), description = notes.trim(), date = 0L, iconName = iconName, orderIndex = maxOrder + 1),
                     subTaskTitles
                 ).toInt()
             }
